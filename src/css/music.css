@@ -163,15 +163,44 @@
 html, body {
     padding: 0px;
     margin: 0px;
-    font-family: 'SFProDisplay';
+    font-family: 'SFProDisplay', sans-serif;
     font-weight: normal;
     cursor: default;
+    user-select: none;
+    scroll-behavior: smooth;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+::selection {
+    background-color: #fa233b;
+    color: white;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+  
+::-webkit-scrollbar-track {
+    background: #c5c5c5;
+}
+  
+::-webkit-scrollbar-thumb {
+    background: #a5a5a5;
+}
+  
+::-webkit-scrollbar-thumb:hover {
+    background: #919191;
 }
 
 .toolbar {
     width: 100%;
     height: 60px;
     position: fixed;
+    background-color: white;
     z-index: 999;
     top: 0px;
     left: 0px;
@@ -200,6 +229,7 @@ html, body {
 
 .toolbar .control-wrapper img:hover {
     opacity: 0.6;
+    background-color: lightgray;
 }
 
 .toolbar .control-wrapper .red:hover {
@@ -235,7 +265,7 @@ html, body {
     transition: 0.3s cubic-bezier(0.83, -0.01, 0.58, 1) top;
 }
 
-.toolbar .player-wrapper input {
+.toolbar .player-wrapper input[type=text] {
     display: none;
     background-color: transparent;
     color: #3a3a3a;
@@ -250,6 +280,7 @@ html, body {
     left: 0px;
     padding-left: 16px;
     opacity: 0;
+    z-index: 1;
     transition: 0.4s ease opacity;
 }
 
@@ -259,6 +290,7 @@ html, body {
     position: absolute;
     right: 6px;
     top: 8px;
+    z-index: 1;
     cursor: pointer;
 }
 
@@ -271,14 +303,140 @@ html, body {
     top: 8px;
     cursor: pointer;
     opacity: 0;
+    z-index: 1;
     transition: 0.4s ease opacity;
+}
+
+.toolbar .player-wrapper .playback-progress-wrapper {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    border-radius: 9px;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.toolbar .player-wrapper .playback-progress-wrapper input[type=range] {
+    opacity: 0;
+    background: #e0e0e0;
+    outline: none;
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    position: absolute;
+    top: 0px;
+    pointer-events: auto;
+    z-index: 1;
+    appearance: none;
+    cursor: pointer;
+
+    transition: 0.2s ease-out opacity;
+}
+
+.toolbar .player-wrapper .playback-progress-wrapper input[type=range]::-webkit-slider-thumb {
+    opacity: 1;
+    appearance: none;
+    background: #fa233b;
+    height: 4px;
+    width: 5px;
+}
+
+.toolbar .player-wrapper .playback-progress-wrapper input[type=range]:hover ::-webkit-slider-thumb {
+    opacity: 0;
+}
+
+
+.toolbar .player-wrapper .playback-progress-wrapper #playback-progress {
+    opacity: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #bbbbbb;
+    position: absolute;
+    bottom: 0px;
+    transition: 0.2s ease opacity;
+}
+
+.toolbar .player-wrapper .playback-progress-wrapper #playback-progress-loading {
+    width: 100%;
+    height: 100%;
+    left: 0%;
+    position: relative;
+    background: rgb(164,164,164);
+    background: linear-gradient(90deg, rgba(164,164,164,0) 0%, rgba(88,88,88,1) 50%, rgba(55,55,55,0) 100%);
+    animation: playback-loading 2s infinite linear;
+}
+
+@keyframes playback-loading {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.toolbar .player-wrapper #player-info {
+    display: none;
+    opacity: 0;
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-radius: 9px;
+    overflow: hidden;
+    transition: 0.2s ease opacity;
+}
+
+.toolbar .player-wrapper #player-info #player-artwork {
+    height: 40px;
+    width: 40px;
+    border-radius: 6px;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+.toolbar .player-wrapper #player-info #player-name {
+    position: absolute;
+    top: -16px;
+    right: 46px;
+    width: calc(100% - 92px);
+    text-align: center;
+    font-weight: 400;
+    font-size: 11pt;
+    opacity: 0.8;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.toolbar .player-wrapper #player-info #player-sub {
+    position: absolute;
+    width: calc(100% - 92px);
+    top: 21px;
+    right: 46px;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 9pt;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.toolbar #queue-button {
+    position: absolute;
+    top: 20px;
+    right: 160px;
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 5px;
+    -webkit-app-region: no-drag;
 }
 
 .toolbar .volume-wrapper {
     width: 70px;
     height: 100%;
     position: absolute;
-    right: 200px;
+    right: 230px;
     -webkit-app-region: no-drag;
 }
 
@@ -287,7 +445,7 @@ html, body {
     width: 100%;
     outline: none;
     height: 3px;
-    margin-top: 27px;
+    margin-top: 29px;
     appearance: none;
     cursor: pointer;
     border-radius: 3px;
@@ -318,50 +476,96 @@ html, body {
     left: 8%;
 }
 
-.toolbar .music-wrapper i {
+.toolbar .music-wrapper img {
     opacity: 0.4;
-    margin: 19px 5px;
+    margin: 16px 0px;
     cursor: pointer;
+    display: inline-block;
     -webkit-app-region: no-drag;
+    width: 29px;
 }
 
-.toolbar .music-wrapper .fa-play {
-    font-size: 20px;
+.toolbar .music-wrapper .play {
+    width: 30px;
+    margin-top: 13px;
+}
+
+.toolbar .music-wrapper .side {
     position: relative;
-    top: 1px;
+    top: -5px;
+    width: 28px;
+}
+
+.toolbar .music-wrapper .selected {
+    filter: invert(31%) sepia(70%) saturate(6238%) hue-rotate(341deg) brightness(98%) contrast(100%);
+    opacity: 1;
 }
 
 .library-wrapper {
-    height: calc(100% - 80px);
+    height: calc(100% - 190px);
+    overflow-y: auto;
+    overflow-x: hidden;
     position: absolute;
-    bottom: 0px;
+    bottom: 110px;
     left: 0px;
     padding-top: 20px;
     width: 270px;
-    background-color: #ececec;
+    background-color: #ecececb9;
 }
 
 .library-wrapper div {
     margin: 15px 0px 15px 35px;
-    width: 175px;
-    padding: 6px 12px;
+    width: 150px;
+    padding: 6px 12px 6px 37px;
     background-color: transparent;
     border-radius: 7px;
     cursor: pointer;
+    white-space: nowrap;
     color: rgba(0, 0, 0, 0.85);
+    position: relative;
     transition: 0.1s ease background-color;
 }
 
-.library-wrapper div:hover {
-    background-color: #e2e2e2;
+.library-wrapper div img {
+    position: relative;
+    top: -1px;
+    opacity: 0.5;
 }
 
-.library-wrapper div i {
-    color: #fa233b;
-    margin-right: 6px;
-    font-size: 17px;
-    position: relative;
-    top: 1px;
+.library-wrapper #playlists-wrapper {
+    margin: 0px;
+    width: unset;
+    padding: 0px;
+    background-color: transparent !important;
+    cursor: default;
+}
+
+.library-wrapper #playlists-wrapper div {
+    margin: 5px 0px 5px 35px;
+    padding: 6px 12px;
+    width: 175px;
+}
+
+.library-wrapper #playlists-wrapper div span {
+    font-weight: normal;
+    font-size: unset;
+    color: unset;
+    margin-left: 3px;
+    top: -4px;
+    width: 100%;
+    display: inline-block;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.library-wrapper div .line-icon {
+    height: 26px;
+    position: absolute;
+    left: 7px;
+    top: 3px;
+    filter: invert(31%) sepia(70%) saturate(6238%) hue-rotate(341deg) brightness(98%) contrast(100%);
+    opacity: 1;
 }
 
 .library-wrapper span {
@@ -376,14 +580,1533 @@ html, body {
 .library-wrapper .bottom {
     margin: 0px;
     padding: 0px;
-    position: absolute;
+    position: fixed;
     bottom: 0px;
-    width: 100%;
+    width: 270px;
+    height: 110px;
     border-top: 1px solid #f3f3f373;
     border-radius: 0px;
     cursor: default;
+    background-color: #ecececb9 !important;
 }
 
-.library-wrapper .bottom i {
-    color: #fa233b94;
+.library-wrapper .bottom .line-icon {    
+    width: 20px;
+    margin-left: 3px;
+    opacity: 0.8;
+}
+
+.content-wrapper {
+    height: calc(100% - 60px);
+    width: calc(100% - 270px);
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    background-color: white;
+}
+
+.content-wrapper .c-item {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    overflow-y: auto;
+}
+
+.content-wrapper h1 {
+    text-align: left;
+    margin-top: 0px;
+}
+
+.content-wrapper #c-listen-now {
+    padding: 50px 50px 0px 50px;
+    width: calc(100% - 100px);
+    height: calc(100% - 50px);
+}
+
+.content-wrapper #c-browse {
+    padding: 50px 50px 0px 50px;
+    width: calc(100% - 100px);
+    height: calc(100% - 50px);
+}
+
+.content-wrapper #c-account .login-wrapper {
+    text-align: center;
+    margin-top: 20vh;
+}
+
+.content-wrapper #c-account .login-wrapper h1 {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.content-wrapper #c-account .login-wrapper h4 {
+    font-weight: 400;
+    margin-top: 0px;
+}
+
+.content-wrapper #c-account .login-wrapper .button {
+    display: inline-block;
+    padding: 10px 0px;
+    width: 240px;
+    background-color: #fa233b;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: 0.1s ease background-color;
+}
+
+.content-wrapper #c-account .login-wrapper .button:hover {
+    background-color: #b6172a;
+}
+
+.content-wrapper #c-account #loading-account {
+    display: none;
+    opacity: 0;
+    background-color: white;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    transition: 0.2s ease opacity;
+}
+
+.content-wrapper #c-account #loading-account #loading-account-wheel {
+    opacity: 0;
+    width: 40px;
+    margin-top: 40vh;
+    transition: 1s ease opacity;
+}
+
+.content-wrapper #c-recently-added {
+    padding: 50px 50px 0px 50px;
+    width: calc(100% - 100px);
+    height: calc(100% - 50px);
+}
+
+.content-wrapper #c-recently-added div {
+    display: inline-block;
+    width: 17%;
+    max-height: 270px;
+    max-width: 200px;
+    min-width: 100px;
+    cursor: pointer;
+    margin: 20px 1.5%;
+    margin-bottom: 0px;
+    position: relative;
+}
+
+.content-wrapper #c-recently-added div img {
+    width: 100%;
+    max-height: 200px;
+    border-radius: 5px;
+    box-shadow: rgb(100 100 111 / 20%) 0px 7px 29px 0px;
+    transition: 0.2s ease filter;
+}
+
+.content-wrapper #c-recently-added div:hover img {
+    filter: brightness(0.8);
+}
+
+.content-wrapper #c-recently-added div i {
+    opacity: 0;
+    position: absolute;
+    top: calc(100% - 90px);
+    font-size: 20px;
+    background-color: #8a8a8aab;
+    backdrop-filter: blur(6px);
+    color: white;
+    border-radius: 100%;
+    z-index: 1;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.content-wrapper #c-recently-added div i:hover {
+    background-color: #fa233b;
+}
+.content-wrapper #c-recently-added div:hover i {
+    opacity: 1;
+    top: calc(100% - 85px);
+}
+
+.content-wrapper #c-recently-added div .left {
+    left: 20px;
+    width: 27px;
+    height: 21px;
+    padding-top: 9px;
+    padding-left: 3px;
+    font-size: 12px;
+}
+
+.content-wrapper #c-recently-added div .right {
+    right: 20px;
+    width: 30px;
+    height: 25px;
+    padding-top: 5px;
+}
+
+.content-wrapper #c-recently-added div:hover .left {
+    left: 15px;
+}
+
+.content-wrapper #c-recently-added div:hover .right {
+    right: 15px;
+}
+
+.content-wrapper #c-recently-added div h5 {
+    font-weight: 400;
+    white-space: nowrap;
+    margin-top: 15px;
+    margin-bottom: 0px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-recently-added div h5 span {
+    display: block;
+    font-size: 9pt;
+    text-overflow: ellipsis;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.content-wrapper #c-recently-added div h5 span:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-albums {
+    padding: 50px 50px 0px 50px;
+    width: calc(100% - 100px);
+    height: calc(100% - 50px);
+}
+
+.content-wrapper #c-albums div {
+    display: inline-block;
+    position: relative;
+    width: 200px;
+    height: 270px;
+    min-width: 100px;
+    cursor: pointer;
+    margin: 20px 1.5%;
+    margin-bottom: 0px;
+}
+
+.content-wrapper #c-albums div img {
+    width: 100%;
+    height: 200px;
+    border-radius: 5px;
+    box-shadow: rgb(100 100 111 / 20%) 0px 7px 29px 0px;
+    transition: 0.2s ease filter;
+}
+
+.content-wrapper #c-albums div h5 {
+    font-weight: 400;
+    white-space: nowrap;
+    margin-top: 15px;
+    margin-bottom: 0px;
+    overflow: hidden;
+}
+
+.content-wrapper #c-albums div h5 span {
+    display: block;
+    font-size: 9pt;
+}
+
+.content-wrapper #c-albums div h5 span:hover {
+    text-decoration: underline;
+}
+
+
+.content-wrapper #c-albums div:hover img {
+    filter: brightness(0.8);
+}
+
+.content-wrapper #c-albums div i {
+    opacity: 0;
+    position: absolute;
+    top: calc(100% - 120px);
+    font-size: 20px;
+    background-color: #8a8a8aab;
+    backdrop-filter: blur(6px);
+    color: white;
+    border-radius: 100%;
+    z-index: 1;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.content-wrapper #c-albums div i:hover {
+    background-color: #fa233b;
+}
+
+.content-wrapper #c-albums div:hover i {
+    opacity: 1;
+    top: calc(100% - 115px);
+}
+
+.content-wrapper #c-albums div .left {
+    left: 20px;
+    width: 27px;
+    height: 21px;
+    padding-top: 9px;
+    padding-left: 3px;
+    font-size: 12px;
+}
+
+.content-wrapper #c-albums div .right {
+    right: 20px;
+    width: 30px;
+    height: 25px;
+    padding-top: 5px;
+}
+
+.content-wrapper #c-albums div:hover .left {
+    left: 15px;
+}
+
+.content-wrapper #c-albums div:hover .right {
+    right: 15px;
+}
+
+.content-wrapper #c-artists #artists-navbar {
+    width: 240px;
+    height: 100%;
+    border-right: 1px solid #f1f1f1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.content-wrapper #c-artists #artists-navbar div {
+    height: 49px;
+    width: 100%;
+    white-space: nowrap;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.content-wrapper #c-artists #artists-navbar div img {
+    width: 35px;
+    border-radius: 100%;
+    margin: 7px 10px 0px 10px;
+    box-shadow: rgb(149 157 165 / 20%) 0px 8px 24px;
+}
+
+.content-wrapper #c-artists #artists-navbar div .no-image {
+    filter: invert(1);
+    background: linear-gradient(45deg, #909090, #2f2f2f);
+    padding: 7px;
+    width: 21px;
+    height: 21px;
+}
+
+.content-wrapper #c-artists #artists-navbar div .no-image::after {
+    border-radius: 100%;
+}
+
+.content-wrapper #c-artists #artists-navbar div span {
+    position: relative;
+    top: -14px;
+    font-size: 9pt;
+}
+
+.content-wrapper #c-artists #artist-tab {
+    width: calc(100% - 340px);
+    height: calc(100% - 100px);
+    padding: 50px;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    overflow-y: auto;
+}
+
+.content-wrapper #c-artists #artist-loading-item {
+    background-color: white;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+}
+
+.content-wrapper #c-artists #artist-loading-item img {
+    width: 40px !important;
+    height: 40px !important;
+    box-shadow: none !important;
+    margin-top: 40vh;
+}
+
+.content-wrapper #c-artists #artist-tab img {
+    border-radius: 100%;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+    box-shadow: rgb(100 100 111 / 20%) 0px 7px 29px 0px;
+}
+
+.content-wrapper #c-artists #artist-tab .no-image {
+    display: none;
+}
+
+.content-wrapper #c-artists #artist-tab h1 {
+    font-size: 26px;
+    text-align: left;
+}
+
+.content-wrapper #c-artists #artist-tab .separator {
+    width: 100%;
+    height: 1px;
+    margin: 10px 0px 25px 0px;
+    background-color: #f1f1f1;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div {
+    display: inline-block;
+    position: relative;
+    width: 220px;
+    height: 270px;
+    min-width: 100px;
+    cursor: pointer;
+    margin: 20px 1.5%;
+    margin-bottom: 0px;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div img {
+    width: 100%;
+    height: 220px;
+    border-radius: 5px;
+    margin-bottom: 0px;
+    box-shadow: rgb(100 100 111 / 20%) 0px 7px 29px 0px;
+    transition: 0.2s ease filter;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div h5 {
+    font-weight: 400;
+    white-space: nowrap;
+    margin-top: 5px;
+    margin-bottom: 0px;
+    overflow: hidden;
+    text-align: left;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div h5 span {
+    display: block;
+    font-size: 9pt;
+    color: #969696;
+}
+
+
+.content-wrapper #c-artists #artist-tab #artist-albums div:hover img {
+    filter: brightness(0.8);
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div i {
+    opacity: 0;
+    position: absolute;
+    top: calc(100% - 105px);
+    font-size: 20px;
+    background-color: #8a8a8aab;
+    backdrop-filter: blur(6px);
+    color: white;
+    border-radius: 100%;
+    z-index: 1;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div i:hover {
+    background-color: #fa233b;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div:hover i {
+    opacity: 1;
+    top: calc(100% - 100px);
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div .left {
+    left: 20px;
+    width: 27px;
+    height: 21px;
+    padding-top: 9px;
+    padding-left: 3px;
+    font-size: 12px;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div .right {
+    right: 20px;
+    width: 30px;
+    height: 25px;
+    padding-top: 5px;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div:hover .left {
+    left: 15px;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div:hover .right {
+    right: 15px;
+}
+
+.content-wrapper #c-songs table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.content-wrapper #c-songs tr {
+    text-align: left;
+}
+
+.content-wrapper #c-songs tr:hover img {
+    filter: brightness(0.6);
+}
+
+.content-wrapper #c-songs tr:hover th i {
+    opacity: 1;
+}
+
+.content-wrapper #c-songs tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+.content-wrapper #c-songs .header {
+    /* position: fixed; */
+    top: 60px;
+    background-color: #ffffffd9;
+    width: 100%;
+    border-bottom: 1px solid #e6e6e6;
+    z-index: 1;
+    backdrop-filter: blur(4px);
+}
+
+.content-wrapper #c-songs .header th {
+    font-weight: 400;
+    font-size: 10pt;
+    border-left: 1px solid #afafaf;
+}
+
+.content-wrapper #c-songs .header span {
+    position: unset;
+}
+
+.content-wrapper #c-songs tr th {
+    font-weight: 400;
+    white-space: nowrap;
+    font-size: 10pt;
+    overflow-x: hidden;
+    position: relative;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-songs tr th img {
+    width: 36px;
+    height: 36px;
+    border-radius: 5px;
+    margin-left: 50px;
+    position: relative;
+    top: 1px;
+    cursor: pointer;
+}
+
+.content-wrapper #c-songs tr th span {
+    margin-left: 10px;
+}
+
+.content-wrapper #c-songs tr th .song-link {
+    cursor: pointer;
+}
+
+.content-wrapper #c-songs tr th .song-link:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-songs tr .name span {
+    position: relative;
+    top: -12px;
+    width: 50%;
+}
+
+.content-wrapper #c-songs tr .name i {
+    opacity: 0;
+    position: absolute;
+    color: white;
+    top: 14px;
+    left: 64px;
+    cursor: pointer;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.content-wrapper #c-songs tr .name .fa-ellipsis-h {
+    left: 17px;
+    top: 12px;
+    font-size: 12pt;
+    color: #fa233b;
+    pointer-events: auto;
+}
+
+.content-wrapper #c-settings {
+    padding: 50px 50px 0px 50px;
+    width: calc(100% - 100px);
+    height: calc(100% - 50px);
+}
+
+.content-wrapper #c-album #album-header {
+    width: 100%;
+    height: 350px;
+    position: relative;
+}
+
+.content-wrapper #c-album #album-header img {
+    width: 270px;
+    border-radius: 5px;
+    margin-top: 40px;
+    margin-left: 46px;
+    box-shadow: rgb(100 100 111 / 55%) 0px 7px 29px 0px;
+}
+
+.content-wrapper #c-album #album-header .text-wrapper {
+    position: absolute;
+    left: 344px;
+    top: 103px;
+}
+
+.content-wrapper #c-album #album-header .text-wrapper h1 {
+    font-weight: 500;
+    font-size: 20pt;
+    margin-bottom: 2px;
+}
+
+.content-wrapper #c-album #album-header .text-wrapper .link {
+    display: inline;
+    margin-bottom: 0px;
+    color: #fa233b;
+    cursor: pointer;
+    transition: 0.1s ease text-decoration;
+}
+
+.content-wrapper #c-album #album-header .text-wrapper .link:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-album #album-header .text-wrapper span {
+    display: block;
+    font-size: 11pt;
+    font-variant-caps: all-petite-caps;
+    letter-spacing: 0.3px;
+    opacity: 0.7;
+}
+
+.content-wrapper #c-album #album-header .play-button {
+    display: inline-block;
+    color: white;
+    background-color: #fa233b;
+    padding: 2px 30px;
+    border-radius: 6px;
+    font-weight: 600;
+    line-height: 26px;
+    cursor: pointer;
+    position: absolute;
+    bottom: 40px;
+    left: 344px;
+}
+
+.content-wrapper #c-album #album-header .play-button img {
+    width: 18px;
+    filter: invert(1);
+    border-radius: unset;
+    margin: 0px 5px 0px 0px;
+    position: relative;
+    top: 4px;
+    box-shadow: none;
+}
+
+.content-wrapper #c-album #album-header .shuffle-button {
+    display: none;
+    color: white;
+    background-color: #fa233b;
+    padding: 2px 17px 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+    line-height: 26px;
+    cursor: pointer;
+    position: absolute;
+    height: 26px;
+    bottom: 40px;
+    left: 464px;
+}
+
+.content-wrapper #c-album #album-header .shuffle-button img {
+    width: 30px;
+    filter: invert(1);
+    border-radius: unset;
+    margin: 0px 5px 0px 0px;
+    position: relative;
+    top: 2px;
+    box-shadow: none;
+}
+
+.content-wrapper #c-album #album-header .shuffle-button span {
+    position: relative;
+    top: -3px;
+}
+
+.content-wrapper #c-album #album-header i {
+    color: #fa233b;
+    background-color: #fbfbfb;
+    padding: 6px;
+    border-radius: 100%;
+    position: absolute;
+    bottom: 40px;
+    right: 45px;
+    cursor: pointer;
+}
+
+.content-wrapper #c-album #album-song-list {
+    margin-bottom: 25px
+}
+
+.content-wrapper #c-album #album-song-list li {
+    list-style: none;
+    height: 45px;
+    margin: 5px 30px;
+    padding: 0px 15px 0px 35px;
+    border-radius: 7px;
+    font-weight: 400;
+    font-size: 13px;
+    position: relative;
+    line-height: 45px;
+    transition: 0.1s ease background-color;
+}
+
+.content-wrapper #c-album #album-song-list li:nth-child(even) {
+    background-color: #fbfbfb;
+}
+
+.content-wrapper #c-album #album-song-list li img {
+    opacity: 0;
+    cursor: pointer;
+    width: 22px;
+    position: absolute;
+    left: 10px;
+    top: 12px;
+    filter: invert(31%) sepia(70%) saturate(6238%) hue-rotate(341deg) brightness(98%) contrast(100%);
+    transition: 0.1s ease opacity;
+}
+
+.content-wrapper #c-album #album-song-list li:hover {
+    background-color: #f1f1f1;
+}
+
+.content-wrapper #c-album #album-song-list li:hover img {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.content-wrapper #c-album #album-song-list li .index {
+    opacity: 0.6;
+    position: relative;
+    left: -17px;
+    z-index: 1;
+    cursor: pointer;
+    pointer-events: none;
+    transition: 0.1s ease opacity;
+}
+
+.content-wrapper #c-album #album-song-list li i {
+    color: #fa233b;
+    float: right;
+    margin-right: 7px;
+    line-height: 45px;
+    cursor: pointer;
+}
+
+.content-wrapper #c-album #album-song-list li .time {
+    float: right;
+    margin-right: 15px;
+    opacity: 0.6;
+}
+
+.content-wrapper #c-album #album-song-list li:hover .index {
+    opacity: 0 !important;
+}
+
+.content-wrapper #c-album .bottom {
+    display: block;
+    margin: 2px 30px;
+    font-size: 13px;
+    opacity: 0.6;
+}
+
+.content-wrapper #c-artist {
+    background: linear-gradient(0deg, #cecece, white);
+}
+
+.content-wrapper #c-artist #artist-show-parralax {
+    width: 100%;
+    height: calc((100vw - 135px)/2.2648);
+    object-fit: cover;
+}
+
+.content-wrapper #c-artist #artist-show-avatar {
+    width: 190px;
+    height: 190px;
+    border-radius: 100%;
+    box-shadow: 0 10px 25px rgb(0 0 0 / 10%);
+    position: absolute;
+    left: calc(50% - 95px);
+    top: 85px;
+}
+
+.content-wrapper #c-artist .parralax-bottom-wrapper {
+    width: 100%;
+    position: absolute;
+    top: -60px;
+}
+
+.content-wrapper #c-artist .parralax-bottom-wrapper img {
+    width: 25px;
+    padding: 5px;
+    background-color: #05dcc4;
+    filter: invert(1);
+    border-radius: 100%;
+    cursor: pointer;
+    position: absolute;
+    top: 0px;
+    left: 30px;
+}
+
+.content-wrapper #c-artist .parralax-bottom-wrapper h2 {
+    position: absolute;
+    top: -2px;
+    left: 80px;
+    margin: 0px;
+    font-size: 24pt;
+}
+
+.content-wrapper #c-artist .parralax-bottom-wrapper i {
+    color: white;
+    padding: 5px;
+    background-color: #cccccc80;
+    backdrop-filter: blur(1px);
+    border-radius: 100%;
+    cursor: pointer;
+    position: absolute;
+    right: 30px;
+    float: right;
+    top: 5.5px;
+    vertical-align: middle;
+    display: inline;
+}
+
+.content-wrapper #c-artist #artist-content {
+    background-color: white;
+}
+
+.content-wrapper #c-artist .content-avatarmode {
+    position: absolute;
+    top: 350px;
+    width: 100%;
+    min-height: calc(100% - 350px);
+}
+
+.content-wrapper #c-artist .content-heromode {
+    width: 100%;
+    min-height: 380px;
+    position: relative;
+    top: -170px;
+}
+
+.content-wrapper #c-search {
+    padding: 40px;
+    width: calc(100% - 80px);
+    height: calc(100% - 80px);
+}
+
+.content-wrapper #c-search .scroller::-webkit-scrollbar-track {
+    border-radius: 10px;
+}
+
+.content-wrapper #c-search .scroller::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+}
+
+.content-wrapper #c-search #top-results h3 {
+    font-weight: 500;
+    margin-top: 40px;
+}
+
+.content-wrapper #c-search #top-results-container {
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 40px 0px;
+    position: relative;
+    top: -40px;
+}
+
+.content-wrapper #c-search #top-results-container div {
+    display: inline-block;
+    width: 33%;
+    min-width: 260px;
+    max-width: 460px;
+    height: 110px;
+    background-color: #f5f5f5;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+    margin: 0px 10px;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+.content-wrapper #c-search #top-results-container div div {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.content-wrapper #c-search #top-results-container .artwork {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 5px;
+    margin: 10px 0px 0px 10px;
+    z-index: 1;
+    transition: 0.1s ease filter;
+}
+
+.content-wrapper #c-search #top-results-container .artist {
+    border-radius: 100%;
+    filter: none !important;
+}
+
+.content-wrapper #c-search #top-results-container div:hover .artwork {
+    filter: brightness(0.8);
+}
+
+.content-wrapper #c-search #top-results-container .play {
+    opacity: 0;
+    transition: 0.1s ease opacity;
+    width: 40px;
+    position: absolute;
+    left: 35px;
+    top: 35px;
+    filter: invert(1);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.content-wrapper #c-search #top-results-container div:hover .play {
+    opacity: 1;
+}
+
+.content-wrapper #c-search #top-results-container .add {
+    opacity: 0;
+    filter: invert(31%) sepia(70%) saturate(6238%) hue-rotate(341deg) brightness(98%) contrast(100%);
+    width: 12px;
+    position: absolute;
+    right: 41px;
+    bottom: 17px;
+    z-index: 1;
+    transition: 0.1s ease opacity;
+}
+
+.content-wrapper #c-search #top-results-container div:hover .add {
+    opacity: 1;
+}
+
+.content-wrapper #c-search #top-results-container i {
+    color: #fa233b;
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    z-index: 1;
+}
+
+.content-wrapper #c-search #top-results-container h4 {
+    display: inline-block;
+    position: absolute;
+    font-weight: 400;
+    left: 110px;
+    top: 12px;
+    width: calc(100% - 130px);
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.content-wrapper #c-search #top-results-container span {
+    opacity: 0.5;
+    font-size: 10pt;
+    position: absolute;
+    left: 110px;
+    top: 59px;
+    width: calc(100% - 130px);
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.content-wrapper #c-search #artist-results {
+    position: relative;
+    top: -50px;
+}
+
+.content-wrapper #c-search #artist-results h3 {
+    font-weight: 500;
+    margin-top: 40px;
+}
+
+.content-wrapper #c-search #artist-results .seeall {
+    color: #fa233b;
+    position: absolute;
+    right: 0px;
+    top: -40px;
+    font-weight: 400;
+    font-size: 12pt;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.content-wrapper #c-search #artist-results .seeall:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-search #artist-results-container {
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 40px 0px;
+    position: relative;
+    top: -40px;
+}
+
+.content-wrapper #c-search #artist-results-container div {
+    display: inline-block;
+    height: 170px;
+    position: relative;
+    margin: 0px 15px;
+    cursor: pointer;
+}
+
+.content-wrapper #c-search #artist-results-container div img {
+    border-radius: 100%;
+    width: 140px;
+    height: 140px;
+    border: 1px solid #eaeaea;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+.content-wrapper #c-search #artist-results-container div span {
+    position: absolute;
+    left: 0px;
+    bottom: 5px;
+    width: 100%;
+    font-weight: 400;
+    font-size: 10pt;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-search #artist-results-container div span:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-search #album-results {
+    position: relative;
+    top: -50px;
+}
+
+.content-wrapper #c-search #album-results h3 {
+    font-weight: 500;
+    margin-top: 40px;
+}
+
+.content-wrapper #c-search #album-results .seeall {
+    color: #fa233b;
+    position: absolute;
+    right: 0px;
+    top: -40px;
+    font-weight: 400;
+    font-size: 12pt;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.content-wrapper #c-search #album-results .seeall:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-search #album-results-container {
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 40px 0px;
+    position: relative;
+    top: -40px;
+}
+
+.content-wrapper #c-search #album-results-container div {
+    display: inline-block;
+    height: 240px;
+    position: relative;
+    margin: 0px 15px;
+    cursor: pointer;
+}
+
+.content-wrapper #c-search #album-results-container div img {
+    border-radius: 10px;
+    width: 200px;
+    height: 200px;
+    border: 1px solid #eaeaea;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    transition: 0.2s ease filter;
+}
+
+.content-wrapper #c-search #album-results-container div span {
+    position: absolute;
+    left: 0px;
+    bottom: 15px;
+    width: 100%;
+    font-weight: 400;
+    font-size: 10pt;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-search #album-results-container div span:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-search #album-results-container div .lighter {
+    bottom: 0px;
+    opacity: 0.6;
+}
+
+.content-wrapper #c-search #album-results-container div:hover i {
+    opacity: 1;
+    top: calc(100% - 85px);
+}
+
+.content-wrapper #c-search #album-results-container div:hover .left {
+    left: 15px;
+}
+
+.content-wrapper #c-search #album-results-container div:hover .right {
+    right: 15px;
+}
+
+.content-wrapper #c-search #album-results-container div:hover img {
+    filter: brightness(0.8);
+}
+
+.content-wrapper #c-search #album-results-container div i {
+    opacity: 0;
+    position: absolute;
+    top: calc(100% - 90px);
+    font-size: 20px;
+    background-color: #8a8a8aab;
+    backdrop-filter: blur(6px);
+    color: white;
+    border-radius: 100%;
+    z-index: 1;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.content-wrapper #c-search #album-results-container div .left {
+    left: 20px;
+    width: 27px;
+    height: 21px;
+    padding-top: 9px;
+    padding-left: 3px;
+    font-size: 12px;
+}
+
+.content-wrapper #c-search #album-results-container div .right {
+    right: 20px;
+    width: 30px;
+    height: 25px;
+    padding-top: 5px;
+}
+
+.content-wrapper #loading-item {
+    background-color: white;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+}
+
+.content-wrapper #loading-item img {
+    width: 40px;
+    margin-top: 40vh;
+}
+
+#queue-wrapper {
+    display: none;
+    opacity: 0;
+    position: absolute;
+    bottom: 0px;
+    right: -15px;
+    width: 270px;
+    height: calc(100% - 60px);
+    overflow-y: auto;
+    background-color: #ffffffeb;
+    backdrop-filter: blur(16px);
+    border-left: 1px solid #ececec;
+    z-index: 10;
+    transition: 0.2s ease-out;
+}
+
+#queue-wrapper #queue-nosongs {
+    display: block;
+    text-align: center;
+    font-weight: 300;
+    font-size: 10pt;
+    position: absolute;
+    width: 100%;
+    top: 46%;
+}
+
+#queue-wrapper #queue-upnext {
+    margin-left: 20px;
+    margin-bottom: 0px;
+}
+
+#queue-wrapper li {
+    list-style: none;
+    height: 40px;
+    padding: 8px 10px;
+    margin: 5px 0px;
+    font-size: 10pt;
+    font-weight: 400;
+    position: relative;
+    background-color: transparent;
+    transition: 0.1s ease;
+}
+
+#queue-wrapper li:hover {
+    background-color: ghostwhite;
+}
+
+#queue-wrapper li img {
+    width: 40px;
+    border-radius: 3px;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+#queue-wrapper li .title {
+    position: absolute;
+    left: 60px;
+    top: 11px;
+    opacity: 0.9;
+    cursor: pointer;
+    display: block;
+    width: calc(100% - 110px);
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#queue-wrapper li .artist {
+    position: absolute;
+    left: 60px;
+    bottom: 13px;
+    opacity: 0.6;
+    cursor: pointer;
+    display: block;
+    width: calc(100% - 110px);
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#queue-wrapper li .time {
+    position: absolute;
+    right: 15px;
+    top: 0px;
+    line-height: 56px;
+    opacity: 0.6;
+    transition: 0.1s ease opacity;
+}
+
+#queue-wrapper li:hover .time {
+    opacity: 0;
+}
+
+#queue-wrapper li i {
+    opacity: 0;
+    position: absolute;
+    right: 21px;
+    top: 0px;
+    line-height: 56px;
+    color: #fa233b;
+    cursor: pointer;
+    transition: 0.1s ease opacity;
+}
+
+#queue-wrapper li:hover i {
+    opacity: 1;
+}
+
+#queue-wrapper #queue-clear {
+    font-size: 10pt;
+    font-weight: 400;
+    display: block;
+    text-align: center;
+    color: #fa233b;
+    cursor: pointer;
+    margin-top: 15px;
+    margin-bottom: 30px;
+}
+
+#queue-wrapper span:hover {
+    text-decoration: underline;
+}
+
+#search-window {
+    display: none;
+    position: absolute;
+    top: 70px;
+    left: calc(50% - 15vw);
+    border-radius: 9px;
+    z-index: 2;
+    width: calc(30vw + 6px);
+    max-width: 606px;
+    height: 500px;
+    background-color: #ffffffe3;
+    backdrop-filter: blur(15px);
+    overflow-y: auto;
+    border: 1px solid #d8d8d8;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+#search-window::-webkit-scrollbar-track {
+    border-radius: 0px 10px 10px 0px;
+}
+  
+#search-window::-webkit-scrollbar-thumb {
+    border-radius: 0px 10px 10px 0px;
+}
+
+#search-window .search-type-wrapper {
+    width: 173px;
+    margin-top: 10px;
+    background-color: #e6e6e6de;
+    border-radius: 10px;
+    padding: 3px;
+    overflow: hidden;
+}
+
+#search-window .search-type-wrapper div {
+    display: inline-block;
+    font-weight: 400;
+    font-size: 11pt;
+    height: 27px;
+    line-height: 27px;
+    border-radius: 8px;
+    padding: 0px 5px;
+    cursor: pointer;
+}
+
+#search-window .search-type-wrapper .selected {
+    background-color: white;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+#search-window #suggestion-list {
+    padding: 10px 15px 0px 15px;
+}
+
+#search-window #suggestion-list li {
+    list-style: none;
+    text-align: left;
+    opacity: 0.8;
+    font-weight: 500;
+    font-size: 10pt;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    background-color: transparent;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: 0.1s ease background-color;
+}
+
+#search-window #suggestion-list li:hover {
+    background-color: ghostwhite;
+}
+
+#search-window #suggestion-list li img {
+    width: 16px;
+    position: relative;
+    top: 2px;
+    margin-right: 5px;
+}
+
+#search-window #suggestion-list li span {
+    position: relative;
+    top: -1px;
+    color: #8a8a8a;
+}
+
+#search-window #suggestion-list li span span {
+    position: unset;
+    color: black;
+}
+
+#search-window #suggestion-list div {
+    height: 50px;
+    padding: 10px;
+    text-align: left;
+    border-top: 1px solid #d2d2d2;
+    cursor: pointer;
+    position: relative;
+    background-color: transparent;
+    transition: 0.1s ease background-color;
+}
+
+#search-window #suggestion-list div:hover {
+    background-color: ghostwhite;
+}
+
+#search-window #suggestion-list .artist .artwork {
+    border-radius: 100%;
+}
+
+#search-window #suggestion-list div .artwork {
+    border-radius: 5px;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    width: 50px;
+    height: 50px;
+    background-color: white;
+}
+
+#search-window #suggestion-list div h4 {
+    display: inline-block;
+    margin: 9px 0px 0px 10px;
+    position: absolute;
+    font-weight: 400;
+    font-size: 11pt;
+    width: calc(100% - 110px);
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#search-window #suggestion-list div span {
+    font-size: 10pt;
+    opacity: 0.6;
+    position: absolute;
+    margin: 26px 0px 0px 10px;
+    width: calc(100% - 110px);
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#search-window #suggestion-list div .add {
+    opacity: 0;
+    cursor: pointer;
+    width: 12px;
+    position: absolute;
+    right: 15px;
+    top: 28px;
+    filter: invert(31%) sepia(70%) saturate(6238%) hue-rotate(341deg) brightness(98%) contrast(100%);
+    transition: 0.1s ease opacity;
+}
+
+#search-window #suggestion-list div:hover .add {
+    opacity: 1;
+}
+
+#search-window #suggestion-list div .go {
+    filter: unset;
+}
+
+#search-window #suggestion-list div:hover .go {
+    opacity: 0.6;
+}
+
+.part-loading-item {
+    background-color: white !important;
+    position: absolute !important;
+    padding: unset !important;
+    margin: unset !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0px !important;
+    top: 0px !important;
+    z-index: 1 !important;
+    box-shadow: none !important;
+    border-radius: unset !important;
+    max-height: unset !important;
+    max-width: unset !important;
+    min-height: unset !important;
+    min-width: unset !important;
+}
+
+.part-loading-item img {
+    width: 40px !important;
+    height: 40px !important;
+    box-shadow: none !important;
+    border-radius: unset !important;
+    max-height: unset !important;
+    max-width: unset !important;
+    min-height: unset !important;
+    min-width: unset !important;
+    padding: unset !important;
+    margin: unset !important;
+    margin-top: 40vh !important;
+}
+
+#context-menu {
+    display: none;
+    z-index: 1;
+    position: absolute;
+    width: 170px;
+    background-color: #f9f9f9ba;
+    backdrop-filter: blur(16px);
+    border-radius: 7px;
+    border: 1px solid #adadad;
+    transition: 0.2s ease opacity;
+}
+
+#context-menu li {
+    list-style: none;
+    position: relative;
+    height: 23px;
+    padding: 7px 0px 0px 10px;
+    font-weight: 400;
+    font-size: 11pt;
+    cursor: pointer;
+    background-color: transparent;
+    border-top: 1px solid #adadad;
+    transition: 0.1s ease background-color;
+}
+
+#context-menu li:hover {
+    background-color: ghostwhite;
+}
+
+#context-menu li img {
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    right: 10px;
 }

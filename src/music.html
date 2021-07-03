@@ -3,20 +3,26 @@
         <title>Music</title>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <!-- <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.1.min.js" type="text/javascript"></script> -->
+        <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.1.min.js" type="text/javascript"></script>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>
+        <!-- <script src="https://js-cdn.music.apple.com/musickit/v2/amp/musickit.js?t=1624321262915"></script> -->
         <link rel="stylesheet" href="css/music.css" />
         <script src="js/music.js"></script>
+        <script src="js/data.js"></script>
+        <script src="js/musickit.js"></script>
+        <!-- <script src="js/appleservices.js"></script> -->
     </head>
     <body>
         <div class="toolbar">
             <div class="control-wrapper" align="center">
                 <img src="assets/minimize.png" onclick="ipcRenderer.send('minimize_app');" />
-                <img src="assets/maximize.png" onclick="ipcRenderer.send('maximize_app');" />
+                <img src="assets/maximize.png" onclick="ipcRenderer.send('maximize_app');" id="maximize-img" />
                 <img src="assets/times_bold.png" class="red" onclick="ipcRenderer.send('close_app');" />
             </div>
+            <img src="assets/queue.svg" id="queue-button" onclick="toggleQueue()" style="background-color: transparent;" />
             <div class="volume-wrapper">
-                <input type="range" min="0" max="1" step="0.05" role="slider" id="volume" />
+                <input type="range" min="0" max="1" step="0.01" role="slider" id="volume" />
             </div>
             <div class="player-wrapper" id="player-wrapper">
                 <div id="idle-logo-wrapper">
@@ -24,28 +30,187 @@
                 </div>
                 <img src="assets/times.png" class="cancel" id="cancel-search" onclick="hideSearchBar()" />
                 <img src="assets/search.png" class="search" onclick="useSearchBar()" />
-                <input type="text" id="search" style="display: none;" spellcheck="false" placeholder="Search anything..." />
+                <input type="text" id="search" style="display: none;" oninput="searchText(this.value)" spellcheck="false" placeholder="Search anything..." />
+                <div class="playback-progress-wrapper">
+                    <div id="playback-progress">
+                        <div id="playback-progress-loading"></div>
+                        <input type="range" id="playback-progress-slider" min="0" step="1">
+                    </div>
+                </div>
+                <div id="player-info">
+                    <img id="player-artwork" />
+                    <h4 id="player-name"></h4>
+                    <span id="player-sub"></span>
+                </div>
             </div>
             <div class="music-wrapper">
-                <i class="fas fa-backward"></i>
-                <i class="fas fa-play"></i>
-                <i class="fas fa-forward"></i>
+                <img src="assets/shuffle.svg" class="side" id="shuffle-button" onclick="toggleShuffle(this)" />
+                <img src="assets/previous.svg" class="control-button" onclick="ipcRenderer.send('MusicJS', 'MusicKit.getInstance().skipToPreviousItem();')"></i>
+                <img src="assets/play.svg" class="control-button play" id="playpause-button" onclick="playPauseSong()"></i>
+                <img src="assets/next.svg" class="control-button" onclick="ipcRenderer.send('MusicJS', 'MusicKit.getInstance().skipToNextItem();')"></i>
+                <img src="assets/repeat.svg" class="side" id="repeat-button" onclick="changeRepeatMode(this)" />
+            </div>
+        </div>
+        <div align="center">
+            <div id="search-window" style="display: none;">
+                <div class="search-type-wrapper">
+                    <div id="search-type-online" class="selected">Apple Music</div>
+                    <div id="search-type-offline">Your Library</div>
+                </div>
+                <div id="suggestion-list"></div>
             </div>
         </div>
         <div class="library-wrapper">
-            <div><i class="far fa-play-circle"></i> Listen Now</div>
-            <div><i class="fas fa-th-large"></i> Browse</div>
-            <div><i class="fas fa-satellite-dish"></i> Radio</div>
+            <span style="font-weight: 500;"><i class="fab fa-apple" style="margin-right: 1px;"></i>Music</span>
+            <div class="nb-item" id="nb-listen-now" onclick="navBarSelect('listen-now')"><img src="assets/playCircle.svg" class="line-icon" /> Listen Now</div>
+            <div class="nb-item" id="nb-browse" onclick="navBarSelect('browse')"><img src="assets/browse.svg" class="line-icon" /> Browse</div>
             <span>Library</span>
-            <div><i class="far fa-clock"></i> Recently Added</div>
-            <div><i class="fas fa-microphone-alt"></i> Artist</div>
-            <div><i class="fas fa-compact-disc"></i> Albums</div>
-            <div><i class="fas fa-music"></i> Songs</div>
-            <span>No playlists</span>
+            <div class="nb-item" id="nb-recently-added" onclick="navBarSelect('recently-added')"><img src="assets/time.svg" class="line-icon" /> Recently Added</div>
+            <div class="nb-item" id="nb-artists" onclick="navBarSelect('artists')"><img src="assets/artist.svg" class="line-icon" /> Artists</div>
+            <div class="nb-item" id="nb-albums" onclick="navBarSelect('albums')"><img src="assets/albums.svg" class="line-icon" /> Albums</div>
+            <div class="nb-item" id="nb-songs" onclick="navBarSelect('songs')"><img src="assets/song.svg" class="line-icon" /> Songs</div>
+            <span id="playlists-status">Loading playlists...</span>
+            <div id="playlists-wrapper"></div>
             <div class="bottom">
-                <div><i class="fas fa-user-circle"></i> Account</div>
-                <div><i class="fas fa-cog"></i>Settings</div>
+                <div class="nb-item" id="nb-account" onclick="navBarSelect('account')"><img src="assets/account.svg" class="line-icon" /> Account</div>
+                <div class="nb-item" id="nb-settings" onclick="navBarSelect('settings')"><img src="assets/cog.svg" class="line-icon" /> Settings</div>
             </div>
+        </div>
+        <div class="content-wrapper">
+            <div class="c-item" id="c-listen-now">
+                <h1>Listen now</h1>
+            </div>
+            <div class="c-item" id="c-browse">
+                <h1>Browse</h1>
+            </div>
+            <div class="c-item" id="c-recently-added" onscroll="scrollingRecentlyAdded()" align="center">
+                <h1>Recently added</h1>
+                <div id="recently-added-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-artists">
+                <div id="artists-navbar" onscroll="scrollingArtists()"></div>
+                <div id="artist-tab" align="center">
+                    <div id="artist-loading-item" class="part-loading-item" style="display: none;" align="center">
+                        <img src="assets/loading.gif" />
+                    </div>
+                    <img id="artist-avatar" class="no-image" />
+                    <h1 id="artist-name"></h1>
+                    <div id="artist-albums"></div>
+                </div>
+                <div id="artists-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-albums" onscroll="scrollingAlbums()" align="center">
+                <div id="albums-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-songs" onscroll="scrollingSongs()">
+                <table>
+                    <tbody id="songs-list">
+                        <tr class="header">
+                            <th class="name" style="border-left: 0px; width: 50%;"><span style="margin-left: 50px; position: unset;">Name</span></th>
+                            <th><span>Artist</span></th>
+                            <th><span>Album</span></th>
+                            <th style="width: 70px;"><span>Time</span></th>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="songs-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-account">
+                <div class="login-wrapper">
+                    <h1>You are not connected</h1>
+                    <h4>Login to get access to the entire Apple Music library</h4>
+                    <br />
+                    <div class="button" onclick="loginToApple()">Login to Apple Music</div>
+                </div>
+                <div id="loading-account" align="center">
+                    <img src="assets/loading.gif" id="loading-account-wheel" />
+                </div>
+            </div>
+            <div class="c-item" id="c-settings">
+                <h1>Settings</h1>
+                <button onclick="ipcRenderer.send('show_applemusic')">Show Apple Music Window</button>
+                <button onclick="ipcRenderer.send('hide_applemusic')">Hide Apple Music Window</button>
+            </div>
+            <div class="c-item" id="c-album">
+                <div id="album-header">
+                    <img id="album-show-artwork" />
+                    <div class="text-wrapper">
+                        <h1 id="album-show-title"></h1>
+                        <h1 id="album-show-artist" class="link"></h1>
+                        <span id="album-show-genre-date"></span>
+                    </div>
+                    <div class="play-button" id="album-show-play"><img src="assets/play.svg" /> Play</div><div class="shuffle-button" id="album-show-shuffle"><img src="assets/shuffle.svg" /> <span>Shuffle</span></div>
+                    <i class="fas fa-ellipsis-h"></i>
+                </div>
+                <div id="album-song-list">
+
+                </div>
+                <span class="bottom" id="album-releasedate"></span>
+                <span class="bottom" id="album-counter"></span>
+                <span class="bottom" id="album-copyright" style="margin-bottom: 50px;"></span>
+                <div id="album-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-artist">
+                <img id="artist-show-parralax" />
+                <img id="artist-show-avatar" />
+                <div id="artist-content">
+                    <div class="parralax-bottom-wrapper">
+                        <img src="assets/play.svg" />
+                        <h2 id="artist-show-name"></h2>
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div id="artist-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-search">
+                <h1 id="search-results-title"></h1>
+                <div id="top-results">
+                    <h3>Top results</h3>
+                    <div id="top-results-container" class="scroller" align="center"></div>
+                </div>
+                <div id="artist-results">
+                    <h3>Artists</h3>
+                    <h3 class="seeall" id="artist-results-seeall">See All</h3>
+                    <div id="artist-results-container" class="scroller"></div>
+                </div>
+                <div id="album-results">
+                    <h3>Albums</h3>
+                    <h3 class="seeall" id="album-results-seeall">See All</h3>
+                    <div id="album-results-container" class="scroller"></div>
+                </div>
+                <div id="search-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div id="loading-item" style="display: none;" align="center">
+                <img src="assets/loading.gif" />
+            </div>
+        </div>
+        <div id="context-menu">
+            <li id="context-menu-addlibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Add To Library <img src="assets/add.svg" /></li>
+            <li id="context-menu-removelibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Delete From Library <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
+            <div id="context-menu-media">
+                <li>Play Next <img src="assets/playNext.svg" /></li>
+                <li>Play Later <img src="assets/playLater.svg" /></li>
+                <li style="border-radius: 0px 0px 5px 5px;">Share <img src="assets/share.svg" /></li>
+            </div>
+        </div>
+        <div id="queue-wrapper">
+            <h5 id="queue-upnext" style="display: none;">Up next</h5>
+            <div id="queue-song-list"></div>
+            <span id="queue-nosongs">No upcoming songs</span>
         </div>
     </body>
 </html>

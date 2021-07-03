@@ -4,11 +4,26 @@
   "description": "An electron-based Apple Music app",
   "main": "main.js",
   "dependencies": {
-    "electron": "^13.1.2"
+    "discord-rich-presence": "0.0.8",
+    "electron-acrylic-window": "^0.5.5"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "electron": "https://github.com/castlabs/electron-releases#v11.4.9-wvvmp",
+    "electron-builder": "22.11.4"
+  },
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --dir"
+  },
+  "build": {
+    "electronVersion": "11.4.9",
+    "electronDownload": {
+      "version": "11.4.9-wvvmp",
+      "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
+    },
+    "win": {
+      "icon": "./src/assets/icon.ico"
+    }
   },
   "author": "LVN",
   "license": "ISC"
