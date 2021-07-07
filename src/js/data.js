@@ -3,6 +3,8 @@ const { create } = require("domain");
 const fs = require("fs");
 const dataFolderPath = (electron.app || electron.remote.app).getPath('userData');
 
+var app_version;
+
 var playlists;
 var recentlyAdded;
 var recentlyAddedOffset = 0;
@@ -14,6 +16,13 @@ var songs;
 var songsOffset = 0;
 
 async function loadAppData() {
+    ipcRenderer.send('app_version');
+    ipcRenderer.on('app_version', (event, arg) => {
+        ipcRenderer.removeAllListeners('app_version');
+        console.log("RLTrader version is " + arg.version);
+        document.getElementById('update-app-version').innerText = "Version " + arg.version;
+        document.getElementById('settings-app-version').innerText = "Version " + arg.version;
+    });
     if(fs.existsSync(dataFolderPath + "/data/")) {
         var userDataPath = dataFolderPath + "/data/userdata.json";
         if(fs.existsSync(userDataPath))  {
@@ -31,7 +40,6 @@ async function loadAppData() {
                 volumeSlider.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
                 ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
                 navBarSelect(userDataContent.lastOpenedNavbarItem);
-
                 document.getElementById('recently-added-loading-item').style.display = 'block';
                 document.getElementById('albums-loading-item').style.display = 'block';
                 document.getElementById('artists-loading-item').style.display = 'block';

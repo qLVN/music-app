@@ -1,54 +1,47 @@
-const { app, ipcMain } = require('electron')
+const { app, ipcMain, globalShortcut } = require('electron')
 const { BrowserWindow } = require("electron-acrylic-window");
-const client = require('discord-rich-presence')('858367187756384287');
-const discord = require('discord-rpc');
 const fs = require("fs");
 const path = require('path')
 
 let win;
 
+let enabledThumbar = [
+  {
+    tooltip: 'Previous',
+    icon: path.join(__dirname, './src/assets/previous.png')
+  },
+  {
+    tooltip: 'Play',
+    icon: path.join(__dirname, './src/assets/play.png')
+  },
+  {
+    tooltip: 'Next',
+    icon: path.join(__dirname, './src/assets/next.png')
+  }
+]
+
+let enabledPauseThumbar = [
+  {
+    tooltip: 'Previous',
+    icon: path.join(__dirname, './src/assets/previous.png')
+    //click: function() { win2.webContents.executeJavaScript('MusicKit.getInstance().skipToPreviousItem();'); }
+  },
+  {
+    tooltip: 'Pause',
+    icon: path.join(__dirname, './src/assets/pause.png')
+    //click: function() { win.webContents.executeJavaScript('playPauseSong();'); }
+  },
+  {
+    tooltip: 'Next',
+    icon: path.join(__dirname, './src/assets/next.png')
+    //click: function() { win2.webContents.executeJavaScript('MusicKit.getInstance().skipToNextItem();'); }
+  }
+]
+
 const iconPath = process.platform !== 'darwin'
     ? 'src/assets/icon.ico'
     : 'src/assets/icon.icns';
 
-client.updatePresence({
-  state: '',
-  details: 'Idle',
-  startTimestamp: Date.now(),
-  endTimestamp: Date.now() + 1337,
-  largeImageKey: 'music_main',
-  instance: true,
-});
-
-let enabledThumbar = [
-  {
-    tooltip: 'Previous',
-    icon: path.join('src/assets/previous.png')
-  },
-  {
-    tooltip: 'Play',
-    icon: path.join('src/assets/play.png')
-  },
-  {
-    tooltip: 'Next',
-    icon: path.join('src/assets/next.png')
-  }
-]
-
-let disabledThumbar = [
-  {
-    tooltip: 'Previous',
-    icon: path.join(__dirname, './src/assets/previousBlurred.png')
-  },
-  {
-    tooltip: 'Play',
-    icon: path.join(__dirname, './src/assets/playBlurred.png')
-  },
-  {
-    tooltip: 'Next',
-    icon: path.join(__dirname, './src/assets/nextBlurred.png')
-  }
-]
     
 function createWindow() {
   win = new BrowserWindow({
@@ -114,6 +107,18 @@ function invisibleWindow() {
     invisibleWindow();
     setTimeout(function() {
       win.loadFile('src/music.html');
+      globalShortcut.register('MediaPlayPause', () => {
+        win.webContents.executeJavaScript('playPauseSong();');
+      });
+      globalShortcut.register('MediaStop', () => {
+        win2.webContents.executeJavaScript('MusicKit.getInstance().stop();');
+      });
+      globalShortcut.register('MediaPreviousTrack', () => {
+        win2.webContents.executeJavaScript('MusicKit.getInstance().skipToPreviousItem();');
+      });
+      globalShortcut.register('MediaNextTrack', () => {
+        win2.webContents.executeJavaScript('MusicKit.getInstance().skipToNextItem();');
+      });
     }, 2000);
 
     win.on('closed', (event) => {
@@ -124,6 +129,10 @@ function invisibleWindow() {
     });
   })
   
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll()
+  })
+
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
       app.quit();
@@ -135,10 +144,10 @@ function invisibleWindow() {
   });
 
   ipcMain.on('thumbar', (event, data) => {
-    if(data == 0) {
-      win.setThumbarButtons(disabledThumbar);
-    } else {
+    if(data == '0') {
       win.setThumbarButtons(enabledThumbar);
+    } else {
+      win.setThumbarButtons(enabledPauseThumbar);
     }
   });
 
@@ -179,6 +188,7 @@ function invisibleWindow() {
   });
 
   ipcMain.on('close_app', () => {
+    win.webContents.executeJavaScript('client.destroy();');
     win2.destroy();
     app.quit();
   });

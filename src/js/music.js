@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     $(window).click(function() {
         document.getElementById('context-menu').style.display = 'none';
+        document.getElementById('context-menu').style.opacity = 0;
     });
 });
 
@@ -360,7 +361,8 @@ async function presentOnlineAlbum(id) {
         if (sec < 10) {
             sec = '0' + sec;
         }
-        songLi.innerHTML = '<img src="assets/play.svg" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h"></i><span class="time">' + min + ':' + sec + '</span>';
+
+        songLi.innerHTML = '<img src="assets/play.svg" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="showContextMenu(\'media\', \'' + albumData['relationships']['tracks']['data'][song]['id'] + '\', this, true, \'songs\')"></i><span class="time">' + min + ':' + sec + '</span>';
 
         document.getElementById('album-song-list').appendChild(songLi);
         if(songNumber == 2) {
@@ -580,7 +582,7 @@ function toggleSearchWindow() {
     }
 }
 
-function showContextMenu(type, id, element, online) {
+async function showContextMenu(type, id, element, online, id_type) {
     var contextMenu = document.getElementById('context-menu');
 
     var addToLibrary = document.getElementById('context-menu-addlibrary');
@@ -595,20 +597,35 @@ function showContextMenu(type, id, element, online) {
         case 'media':
             contextMedia.style.display = 'block';
             if(online) {
-
+                if(await isInLibrary(id, id_type)) {
+                    removeFromLibrary.style.display = 'block';
+                } else {
+                    addToLibrary.style.display = 'block';
+                }
             } else {
                 removeFromLibrary.style.display = 'block';
             }
             break;
-    
         default:
             break;
     }
 
-    contextMenu.style.left = element.getBoundingClientRect().left;
-    contextMenu.style.top = element.getBoundingClientRect().top;
+    if(element.getBoundingClientRect().left > $(window).width() / 2) {
+        contextMenu.style.left = element.getBoundingClientRect().left - 172 + element.getBoundingClientRect().width;
+    } else {
+        contextMenu.style.left = element.getBoundingClientRect().left;
+    }
 
-    setTimeout(function() {
+    if(element.getBoundingClientRect().top > $(window).height() / 2) {
+        contextMenu.style.top = element.getBoundingClientRect().top - 130 + element.getBoundingClientRect().height;
+    } else {
+        contextMenu.style.top = element.getBoundingClientRect().top;
+    }
+
+    setTimeout(function() { //important
         contextMenu.style.display = 'block';
-    }, 10);
+        setTimeout(function() {
+            contextMenu.style.opacity = 1;
+        }, 200);
+    }, 10); //important
 }

@@ -1,3 +1,45 @@
+const DiscordRPC = require('discord-rpc');
+var ClientId = '858367187756384287';
+DiscordRPC.register(ClientId);
+const rpc = new DiscordRPC.Client({
+    transport: 'ipc'
+});
+
+var activity = {
+    details: '⌛ Loading...',
+    largeImageKey: 'music',
+    largeImageText: 'Music v' + app_version + ' from LVN',
+    smallImageKey: 'play',
+    smallImageText: 'Playing',
+    instance: false
+};
+
+async function setActivity() {
+    if (!rpc) {
+        return;
+    }
+    if(playbackState === 1 || playbackState === 2) {
+        rpc.setActivity(activity);
+    } else {
+        rpc.clearActivity();
+    }
+}
+rpc.on('ready', () => {
+    setActivity();
+    setInterval(() => {
+      setActivity();
+    }, 1000);
+  });
+
+  setActivity();
+  setInterval(() => {
+    setActivity();
+  }, 1000);
+  rpc.login({clientId: ClientId}).catch(console.error);
+
+//https://github.com/discordjs/RPC/issues/14#issuecomment-818805016
+
+
 var playbackState = 0;
 var queueItems;
 
@@ -33,9 +75,12 @@ function playPauseSong() {
     if(playbackState == 3) {
         ipcRenderer.send('MusicJS', 'MusicKit.getInstance().play();');
         playPauseButton.src = 'assets/pause.svg';
+        ipcRenderer.send('thumbar', 1);
     } else {
         ipcRenderer.send('MusicJS', 'MusicKit.getInstance().pause();');
-        playPauseButton.src = 'assets/play.svg';    }
+        playPauseButton.src = 'assets/play.svg';
+        ipcRenderer.send('thumbar', 0);
+    }
 }
 
 function isSongPlaying() {
@@ -108,6 +153,7 @@ function setPlaybackState(state) {
             setControlButtonsEnabled(false);
             playbackSlider.style.opacity = 0;
             document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 1:
             setControlButtonsEnabled(false);
@@ -117,6 +163,7 @@ function setPlaybackState(state) {
             playerInfo.style.display = 'block';
             playbackWrapper.style.opacity = 1;
             document.getElementById('idle-logo').style.top = '40px';
+            ipcRenderer.send('thumbar', 1);
             break;
         case 2:
             setControlButtonsEnabled(true);
@@ -126,11 +173,13 @@ function setPlaybackState(state) {
             playerInfo.style.display = 'block';
             playbackWrapper.style.opacity = 1;
             document.getElementById('idle-logo').style.top = '40px';
+            ipcRenderer.send('thumbar', 1);
             break;
         case 3:
             setControlButtonsEnabled(true);
             playbackSlider.style.opacity = 1;
             document.getElementById('idle-logo').style.top = '40px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 4:
             setControlButtonsEnabled(false);
@@ -141,36 +190,43 @@ function setPlaybackState(state) {
             }, 200);
             playbackSlider.style.opacity = 0;
             playbackWrapper.style.opacity = 0;
+            ipcRenderer.send('thumbar', 0);
             break;
         case 5:
             setControlButtonsEnabled(false);
             playbackSlider.style.opacity = 0;
             document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 6:
             setControlButtonsEnabled(false);
             playbackSlider.style.opacity = 0;
             document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 7:
             setControlButtonsEnabled(false);
             playbackSlider.style.opacity = 0;
             document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 8:
             setControlButtonsEnabled(false);
             playbackSlider.style.opacity = 0;
             document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 9:
-            // setControlButtonsEnabled(false);
-            // playbackSlider.style.opacity = 0;
-            // document.getElementById('idle-logo').style.top = '7px';
+            setControlButtonsEnabled(false);
+            playbackSlider.style.opacity = 0;
+            document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
         case 10:
             setControlButtonsEnabled(false);
             playbackSlider.style.opacity = 0;
             document.getElementById('idle-logo').style.top = '7px';
+            ipcRenderer.send('thumbar', 0);
             break;
     }
 }
@@ -224,6 +280,9 @@ var nowPlayingItem;
 
 function setNowPlayingItem(name, artwork, artist, album, duration, index) {
     nowPlayingItem = { name: name, artwork: artwork, artist: artist, album: album, index: index };
+
+    activity.details = '🎵 ' + name;
+    activity.state = '💿 ' + album + ' — ' + artist;
 
     var playerInfo = document.getElementById('player-info');
     document.getElementById('player-name').innerText = name;
