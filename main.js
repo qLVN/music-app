@@ -1,5 +1,5 @@
 const { app, ipcMain, globalShortcut } = require('electron')
-const { BrowserWindow } = require("electron-acrylic-window");
+const { BrowserWindow } = require('electron-acrylic-window');
 const fs = require("fs");
 const path = require('path')
 
@@ -8,33 +8,48 @@ let win;
 let enabledThumbar = [
   {
     tooltip: 'Previous',
-    icon: path.join(__dirname, './src/assets/previous.png')
+    icon: path.join(__dirname, './src/assets/previous.png'),
+    click: () => {
+      win2.webContents.executeJavaScript('MusicKit.getInstance().skipToPreviousItem();');
+    }
   },
   {
     tooltip: 'Play',
-    icon: path.join(__dirname, './src/assets/play.png')
+    icon: path.join(__dirname, './src/assets/play.png'),
+    click: () => {
+      win.webContents.executeJavaScript('playPauseSong();');
+    }
   },
   {
     tooltip: 'Next',
-    icon: path.join(__dirname, './src/assets/next.png')
+    icon: path.join(__dirname, './src/assets/next.png'),
+    click: () => {
+      win2.webContents.executeJavaScript('MusicKit.getInstance().skipToNextItem();');
+    }
   }
 ]
 
 let enabledPauseThumbar = [
   {
     tooltip: 'Previous',
-    icon: path.join(__dirname, './src/assets/previous.png')
-    //click: function() { win2.webContents.executeJavaScript('MusicKit.getInstance().skipToPreviousItem();'); }
+    icon: path.join(__dirname, './src/assets/previous.png'),
+    click: () => {
+      win2.webContents.executeJavaScript('MusicKit.getInstance().skipToPreviousItem();');
+    }
   },
   {
     tooltip: 'Pause',
-    icon: path.join(__dirname, './src/assets/pause.png')
-    //click: function() { win.webContents.executeJavaScript('playPauseSong();'); }
+    icon: path.join(__dirname, './src/assets/pause.png'),
+    click: () => {
+      win.webContents.executeJavaScript('playPauseSong();');
+    }
   },
   {
     tooltip: 'Next',
-    icon: path.join(__dirname, './src/assets/next.png')
-    //click: function() { win2.webContents.executeJavaScript('MusicKit.getInstance().skipToNextItem();'); }
+    icon: path.join(__dirname, './src/assets/next.png'),
+    click: () => {
+      win2.webContents.executeJavaScript('MusicKit.getInstance().skipToNextItem();');
+    }
   }
 ]
 
@@ -101,11 +116,32 @@ function invisibleWindow() {
   }
 }
 
-  app.on('widevine-ready', () => {
+  var ready = false;
+  var widevine_ready = false;
+
+  app.on('ready', () => {
     createWindow();
     win.loadFile('src/loading.html');
-    invisibleWindow();
+    if(widevine_ready) {
+      finishLoading();
+    } else {
+      ready = true;
+    }
+  });
+
+  app.on('widevine-ready', () => {
+    if(ready) {
+      finishLoading();
+    }
+    widevine_ready = true;
+  })
+
+  function finishLoading() {
+    linux_waittimeout = 0;
+    if(process.platform == 'linux') linux_waittimeout = 1000;
+
     setTimeout(function() {
+      invisibleWindow();
       win.loadFile('src/music.html');
       globalShortcut.register('MediaPlayPause', () => {
         win.webContents.executeJavaScript('playPauseSong();');
@@ -119,15 +155,15 @@ function invisibleWindow() {
       globalShortcut.register('MediaNextTrack', () => {
         win2.webContents.executeJavaScript('MusicKit.getInstance().skipToNextItem();');
       });
-    }, 2000);
 
-    win.on('closed', (event) => {
-      app.quit();
-    });
-    win2.on('closed', (event) => {
-      app.quit();
-    });
-  })
+      win.on('closed', (event) => {
+        app.quit();
+      });
+      win2.on('closed', (event) => {
+        app.quit();
+      });
+    }, linux_waittimeout);
+  }
   
   app.on('will-quit', () => {
     globalShortcut.unregisterAll()
@@ -167,8 +203,8 @@ function invisibleWindow() {
     win.webContents.executeJavaScript('setQueueItems(' + data + ');');
   });
 
-  ipcMain.on('updateNowPlayingItem', (event, name, artworkUrl, artist, album, duration, index) => {
-    win.webContents.executeJavaScript('setNowPlayingItem("' + name + '", "' + artworkUrl + '", "' + artist + '", "' + album + '", "' + duration + '", ' + index + ');');
+  ipcMain.on('updateNowPlayingItem', (event, name, artworkUrl, artist, album, duration, index, id) => {
+    win.webContents.executeJavaScript('setNowPlayingItem("' + name + '", "' + artworkUrl + '", "' + artist + '", "' + album + '", "' + duration + '", ' + index + ', "' + id + '");');
   });
 
   ipcMain.on('show_applemusic', (event) => {

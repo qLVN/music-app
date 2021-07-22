@@ -93,6 +93,13 @@ async function searchText(text) {
                     suggestionAdd.className = 'add go';
                 }
                 suggestionDiv.setAttribute('onclick', 'presentOnlineAlbum("' + searchInfo['suggestions'][suggestion]['content']['id'] + '")');
+
+                var playImg = document.createElement('img');
+                playImg.src = 'assets/play.svg';
+                playImg.className = 'play';
+                suggestionDiv.appendChild(playImg);
+
+                suggestionImg.setAttribute('onclick', 'playAlbum("' + searchInfo['suggestions'][suggestion]['id'] + '", "' + searchInfo['suggestions'][suggestion]['content']['attributes']['artwork']['url'].replace('{w}', '40').replace('{h}', '40') + '")');
                 break;
             case 'songs':
                 suggestionSub.innerHTML = 'Song · ' + searchInfo['suggestions'][suggestion]['content']['attributes']['artistName'];
@@ -102,9 +109,17 @@ async function searchText(text) {
                     suggestionAdd.src = 'assets/arrow_right.svg';
                     suggestionAdd.className = 'add go';
                 } else {
-                    suggestionAdd.setAttribute('onclick', 'queueAddSong("' + searchInfo['suggestions'][suggestion]['content']['id'] + '", this)')
+                    suggestionAdd.setAttribute('onclick', 'queueAddSong("' + searchInfo['suggestions'][suggestion]['content']['id'] + '", this)');
                 }
-                suggestionDiv.setAttribute('onclick', 'playOnlineSong("' + searchInfo['suggestions'][suggestion]['content']['id'] + '", "' + searchInfo['suggestions'][suggestion]['content']['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '")');
+
+                suggestionDiv.setAttribute('onclick', 'presentOnlineAlbum("' + await getAlbumIdForOnlineSong(searchInfo['suggestions'][suggestion]['content']['id']) + '")');
+                
+                var playImg = document.createElement('img');
+                playImg.src = 'assets/play.svg';
+                playImg.className = 'play';
+                suggestionDiv.appendChild(playImg);
+
+                suggestionImg.setAttribute('onclick', 'playOnlineSong("' + searchInfo['suggestions'][suggestion]['content']['id'] + '", "' + searchInfo['suggestions'][suggestion]['content']['attributes']['artwork']['url'].replace('{w}', '40').replace('{h}', '40') + '")');
                 break;
             default:
                 return;
@@ -146,7 +161,7 @@ function hideSearchBar() {
     if(document.getElementById('search-window').style.display == 'block') toggleSearchWindow();
 }
 
-//volume slider & playback slider
+//volume slider / playback slider / context menu / focus tracker
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("volume").oninput = function() {
@@ -174,10 +189,24 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('context-menu').style.display = 'none';
         document.getElementById('context-menu').style.opacity = 0;
     });
+
+    function onBlur() {
+        document.body.className = 'is-not-focused';
+    };
+    function onFocus(){
+        document.body.className = 'is-focused';
+    };
+    
+    window.onfocus = onFocus;
+    window.onblur = onBlur;
 });
+
+selectedNavbar = null;
 
 function navBarSelect(id, isExtra) {
     if(isExtra != true) isExtra = false;
+
+    selectedNavbar = id;
 
     var userDataPath = dataFolderPath + "/data/userdata.json";
     var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
@@ -310,12 +339,14 @@ async function presentAlbum(id) {
         var songLi = document.createElement('li');
         songLi.className = 'album-show-song-line';
         songLi.setAttribute('onclick', 'selectSongInAlbumShow(this)');
+        songLi.setAttribute('song_id', albumData['relationships']['tracks']['data'][song]['id'])
         min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
         sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
         if (sec < 10) {
             sec = '0' + sec;
         }
-        songLi.innerHTML = '<img src="assets/play.svg" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
 
         document.getElementById('album-song-list').appendChild(songLi);
         if(songNumber == 2) {
@@ -362,7 +393,8 @@ async function presentOnlineAlbum(id) {
             sec = '0' + sec;
         }
 
-        songLi.innerHTML = '<img src="assets/play.svg" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="showContextMenu(\'media\', \'' + albumData['relationships']['tracks']['data'][song]['id'] + '\', this, true, \'songs\')"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="showContextMenu(\'media\', \'' + albumData['relationships']['tracks']['data'][song]['id'] + '\', this, true, \'songs\')"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
 
         document.getElementById('album-song-list').appendChild(songLi);
         if(songNumber == 2) {
@@ -376,7 +408,13 @@ async function presentOnlineAlbum(id) {
 async function presentArtist(id) {
     navBarSelect('artist', true);
     if(document.getElementById('search-window').style.display == 'block') hideSearchBar();
-    document.getElementById('artist-loading-item').style.display = 'block';
+    document.getElementById('c-artist-loading-item').style.display = 'block';
+
+    document.getElementById('artist-show-avatar').removeAttribute('src'); //reset avatar/heroart
+    document.getElementById('artist-show-parralax').style.display = 'none';
+    document.getElementById('artist-show-avatar').style.display = 'block';
+    document.getElementById('artist-content').className = 'content-avatarmode';
+    document.getElementById('artist-show-name').removeAttribute('style');
 
     var artistData = await getArtistData(id);
     
@@ -396,10 +434,15 @@ async function presentArtist(id) {
         document.getElementById('artist-content').className = 'content-avatarmode';
         document.getElementById('artist-show-name').removeAttribute('style');
     } else { // no avatar
-
+        document.getElementById('artist-show-avatar').removeAttribute('src');
+        document.getElementById('artist-show-parralax').style.display = 'none';
+        document.getElementById('artist-show-avatar').style.display = 'block';
+        document.getElementById('artist-content').className = 'content-avatarmode';
+        document.getElementById('artist-show-name').removeAttribute('style');
     }
 
     document.getElementById('artist-show-name').innerHTML = artistData['attributes']['name'];
+    document.getElementById('c-artist-loading-item').style.display = 'none';
 }
 
 async function presentSearchResult(text) {

@@ -78,13 +78,16 @@
         </div>
         <div class="content-wrapper">
             <div class="c-item" id="c-listen-now">
-                <h1>Listen now</h1>
+                <h1>Listen Now</h1>
+                <div id="listen-now-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
             </div>
             <div class="c-item" id="c-browse">
                 <h1>Browse</h1>
             </div>
             <div class="c-item" id="c-recently-added" onscroll="scrollingRecentlyAdded()" align="center">
-                <h1>Recently added</h1>
+                <h1>Recently Added</h1>
                 <div id="recently-added-loading-item" class="part-loading-item" style="display: none;" align="center">
                     <img src="assets/loading.gif" />
                 </div>
@@ -136,8 +139,77 @@
             </div>
             <div class="c-item" id="c-settings">
                 <h1>Settings</h1>
-                <button onclick="ipcRenderer.send('show_applemusic')">Show Apple Music Window</button>
-                <button onclick="ipcRenderer.send('hide_applemusic')">Hide Apple Music Window</button>
+                <div class="separator"></div>
+                <div class="category">
+                    <div class="side">
+                        <h3>Account Settings</h3>
+                    </div>
+                    <div class="content">
+                        <span>Account settings are available in the <a onclick="navBarSelect('account')">Account Tab</a>.</span>
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <div class="category">
+                    <div class="side">
+                        <h3>Windows Settings</h3>
+                    </div>
+                    <div class="content">
+                        <h4 style="margin-top: 0px;">Open at system startup <div id="settings-startup" onclick="switchCellSetting(this, 'startup')" class="switchcell"><div></div></div></h4>
+                        <span>Make Music open every time your start your PC.</span>
+                        <h4>Minimize to tray when closing <div id="settings-minimizeclosing" onclick="switchCellSetting(this, 'minimizeClosing')" class="switchcell"><div></div></div></h4>
+                        <span>When closing Music, it stays minimized to tray to show up instantly when re-opening it.</span>
+                        <h4>Enable tray icon <div id="settings-trayicon" onclick="switchCellSetting(this, 'trayIcon')" class="switchcell"><div></div></div></h4>
+                        <span>When Music is minimized to tray, it will still be visible.</span>
+                        <h4>Enable Discord Presence <div id="settings-rpc" onclick="switchCellSetting(this, 'rpc')" class="switchcell"><div></div></div></h4>
+                        <span>Displays a custom Discord status showing what you are listening to.</span>
+                        <h4>Discord platform mode <div id="settings-rpcmode" class="listitemcell"><div value="app" onclick="listItemCellSetting(this.parentNode, 'rpcMode', 'app')">App</div><div value="browser" onclick="listItemCellSetting(this.parentNode, 'rpcMode', 'browser')">Browser</div></div></h4>
+                        <span>Choose 'App' if you are using the Discord Client and 'Browser' if you use Discord on your browser.<br>(Required for Discord Presence to work.)</span>
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <div class="category">
+                    <div class="side">
+                        <h3>Appearence</h3>
+                    </div>
+                    <div class="content">
+                        <h4 style="margin-top: 0px;">Language <div class="listitemcell"><div class="selected">English</div></div></h4>
+                        <h4>Color mode <div id="settings-colormode" class="listitemcell"><div value="system" onclick="listItemCellSetting(this.parentNode, 'colorMode', 'system')">System based</div><div value="light" onclick="listItemCellSetting(this.parentNode, 'colorMode', 'light')">Light</div><div value="dark" onclick="listItemCellSetting(this.parentNode, 'colorMode', 'dark')">Dark</div></div></h4>
+                        <span>Setting 'System based' will make the color mode follow your PCs color mode.</span>
+                        <h4>Tint color</h4>
+                        <span>Soon!</span>
+                        <h4>Performance mode <div id="settings-performancemode" onclick="switchCellSetting(this, 'performanceMode')" class="switchcell"><div></div></div></h4>
+                        <span>For lower-end PCs. Reduces transparency effect and animations for better performances.</span>
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <div class="category">
+                    <div class="side">
+                        <h3>Music</h3>
+                    </div>
+                    <div class="content">
+                        <h4 style="margin-top: 0px;">Disable media controls buttons <div id="settings-disablemediabuttons" onclick="switchCellSetting(this, 'disableMediaButtons')" class="switchcell"><div></div></div></h4>
+                        <h4>Remember shuffle and repeat states <div id="settings-remembershufflerepeatstates" onclick="switchCellSetting(this, 'rememberShuffleRepeatStates')" class="switchcell"><div></div></div></h4>
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <div class="category">
+                    <div class="side">
+                        <h3>Advanced</h3>
+                    </div>
+                    <div class="content">
+                        <a onclick="revealSettingsAdvanced(true)" id="settings-adv-a">Click here to reveal advanced options</a>
+                        <div id="settings-adv" class="hidden">
+                            <button onclick="ipcRenderer.send('show_applemusic')">Show Apple Music Window</button>
+                            <button onclick="ipcRenderer.send('hide_applemusic')">Hide Apple Music Window</button>
+                            <h4>Custom storefront</h4>
+                            <span>Modify the storefront your Apple Music account uses. Not tested.</span>
+                            <br><br>
+                            <a onclick="revealSettingsAdvanced(false)">Click here to hide advanced options</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="separator"></div>
+                <span class="bottom-text">Music is a free Apple Music client made to replace iTunes' old and outdated user interface. I have no right to the Apple Music library. The Apple logo, the SF Pro Display font and all Apple made icons belongs to Apple, Inc.<br><br>Made by <a onclick="shell.openExternal('https://github.com/LIVENVARANE')">LVN</a> with ❤️</span>
             </div>
             <div class="c-item" id="c-album">
                 <div id="album-header">
@@ -170,7 +242,7 @@
                         <i class="fas fa-ellipsis-h"></i>
                     </div>
                 </div>
-                <div id="artist-loading-item" style="display: none;" align="center">
+                <div id="c-artist-loading-item" style="display: none;" align="center">
                     <img src="assets/loading.gif" />
                 </div>
             </div>

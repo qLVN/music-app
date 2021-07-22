@@ -160,6 +160,12 @@
     font-display: swap;
 }
 
+:root {
+    --mainAccent:  #fa233b;
+    --mainAccentInvert: #00f3ff;
+    --hoverColor: ghostwhite;
+}
+
 html, body {
     padding: 0px;
     margin: 0px;
@@ -175,7 +181,7 @@ body {
 }
 
 ::selection {
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
     color: white;
 }
 
@@ -220,7 +226,7 @@ body {
     display: inline;
     height: 25px;
     margin: 0px 3px;
-    cursor: pointer;
+    cursor: default;
     opacity: 0.4;
     -webkit-app-region: no-drag;
     background-color: transparent;
@@ -233,7 +239,7 @@ body {
 }
 
 .toolbar .control-wrapper .red:hover {
-    background-color: #00f3ff;
+    background-color: var(--mainAccentInvert);
     filter: invert(1);
 }
 
@@ -336,15 +342,15 @@ body {
 }
 
 .toolbar .player-wrapper .playback-progress-wrapper input[type=range]::-webkit-slider-thumb {
-    opacity: 1;
     appearance: none;
-    background: #fa233b;
-    height: 4px;
+    background: var(--mainAccent);
+    height: 0px;
     width: 5px;
+    transition: 0.2s ease height;
 }
 
-.toolbar .player-wrapper .playback-progress-wrapper input[type=range]:hover ::-webkit-slider-thumb {
-    opacity: 0;
+.toolbar .player-wrapper:hover .playback-progress-wrapper input[type=range]::-webkit-slider-thumb {
+    height: 4px;
 }
 
 
@@ -510,7 +516,7 @@ body {
     left: 0px;
     padding-top: 20px;
     width: 270px;
-    background-color: #ecececb9;
+    background-color: #ececec70;
 }
 
 .library-wrapper div {
@@ -523,7 +529,7 @@ body {
     white-space: nowrap;
     color: rgba(0, 0, 0, 0.85);
     position: relative;
-    transition: 0.1s ease background-color;
+    transition: 0.2s ease background-color;
 }
 
 .library-wrapper div img {
@@ -587,7 +593,7 @@ body {
     border-top: 1px solid #f3f3f373;
     border-radius: 0px;
     cursor: default;
-    background-color: #ecececb9 !important;
+    background-color: #ececec70 !important;
 }
 
 .library-wrapper .bottom .line-icon {    
@@ -626,6 +632,139 @@ body {
     height: calc(100% - 50px);
 }
 
+.content-wrapper #c-listen-now h1 {
+    margin-bottom: 8px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper {
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-bottom: 25px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper::-webkit-scrollbar-track {
+    border-radius: 10px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper h4 {
+    margin: 5px 0px;
+    font-size: 13pt;
+    font-weight: 600;
+    position: absolute;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper {
+    width: 30%;
+    max-width: 300px;
+    max-height: 400px;
+    display: inline-block;
+    margin-right: 20px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    vertical-align: bottom;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper span {
+    opacity: 0.5;
+    display: block;
+    text-align: left;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper div {
+    cursor: pointer;
+    border-radius: 10px;
+    margin-top: 10px;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper div img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px 10px 0px 0px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper div div {
+    height: 50px;
+    padding: 10px;
+    border-radius: 0px 0px 10px 10px;
+    margin-top: 0px;
+    background-size: cover;
+    background-position: center bottom;
+    filter: saturate(140%);
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper div .bottom-blur {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 0px;
+    left: 0px;
+    top: 0px;
+    background-color: #0000001f;
+    z-index: -1;
+    transition: 0.2s ease background-color;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper:hover div .bottom-blur {
+    background-color: #0000005c;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper div div span {
+    opacity: 1;
+    color: white;
+    width: 100%;
+    text-align: center;
+    display: block;
+    font-size: 10pt;
+    font-weight: 500;
+    white-space: break-spaces;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 50px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .item-wrapper {
+    width: 25%;
+    max-width: 250px;
+    display: inline-block;
+    margin-right: 20px;
+    margin-top: 40px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .item-wrapper img {
+    border-radius: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    width: 100%;
+    height: auto;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .item-wrapper span {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    cursor: pointer;
+    font-size: 10pt;
+    font-weight: 400;
+    text-align: left;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .item-wrapper span.subtitle {
+    opacity: 0.5;
+    margin-bottom: 20px;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .item-wrapper span:hover {
+    text-decoration: underline;
+}
+
 .content-wrapper #c-browse {
     padding: 50px 50px 0px 50px;
     width: calc(100% - 100px);
@@ -651,7 +790,7 @@ body {
     display: inline-block;
     padding: 10px 0px;
     width: 240px;
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
     color: white;
     font-weight: bold;
     cursor: pointer;
@@ -680,6 +819,14 @@ body {
     width: 40px;
     margin-top: 40vh;
     transition: 1s ease opacity;
+}
+
+.content-wrapper #c-listen-now div .hero-wrapper div div span a {
+    text-decoration: none;
+}
+
+.content-wrapper #c-listen-now div .hero-wrapper div div span a:hover {
+    text-decoration: underline;
 }
 
 .content-wrapper #c-recently-added {
@@ -727,7 +874,7 @@ body {
 }
 
 .content-wrapper #c-recently-added div i:hover {
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
 }
 .content-wrapper #c-recently-added div:hover i {
     opacity: 1;
@@ -841,7 +988,7 @@ body {
 }
 
 .content-wrapper #c-albums div i:hover {
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
 }
 
 .content-wrapper #c-albums div:hover i {
@@ -1019,7 +1166,7 @@ body {
 }
 
 .content-wrapper #c-artists #artist-tab #artist-albums div i:hover {
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
 }
 
 .content-wrapper #c-artists #artist-tab #artist-albums div:hover i {
@@ -1145,14 +1292,171 @@ body {
     left: 17px;
     top: 12px;
     font-size: 12pt;
-    color: #fa233b;
+    color: var(--mainAccent);
     pointer-events: auto;
 }
 
 .content-wrapper #c-settings {
-    padding: 50px 50px 0px 50px;
-    width: calc(100% - 100px);
+    padding: 50px 200px 0px 200px;
+    width: calc(100% - 400px);
     height: calc(100% - 50px);
+}
+
+@media screen and (max-width: 1500px) {
+    .content-wrapper #c-settings {
+        padding: 50px 50px 0px 50px;
+        width: calc(100% - 100px);
+        height: calc(100% - 50px);
+    }
+}
+
+.content-wrapper #c-settings .separator {
+    width: 100%;
+    height: 1px;
+    background-color: gainsboro;
+}
+
+.content-wrapper #c-settings .bottom-text {
+    display: block;
+    opacity: 0.5;
+    font-weight: 500;
+    font-size: 10pt;
+    margin: 30px;
+}
+
+.content-wrapper #c-settings .category {
+    padding: 40px 0px;
+    display: flex;
+    position: relative;
+}
+
+.content-wrapper #c-settings .side {
+    float: left;
+    top: 0px;
+    width: 30%;
+    min-width: 200px;
+}
+
+.content-wrapper #c-settings .side h3 {
+    font-weight: 600;
+    font-size: 16pt;
+    position: absolute;
+    top: 15px;
+}
+
+.content-wrapper #c-settings .content {
+    float: right;
+    width: 70%;
+}
+
+.content-wrapper #c-settings .content h4 {
+    margin: 10px 0px 5px 0px;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell {
+    display: inline-block;
+    height: 15px;
+    width: 30px;
+    background-color: #dadada;
+    border: 2px solid #b93838;
+    position: relative;
+    top: 5px;
+    left: 10px;
+    border-radius: 50px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: 0.5s;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell div {
+    width: 100%;
+    height: 15px;
+    background-color: white;
+    border-radius: 50px;
+    box-shadow: 0px 0px 15px -1px rgb(0 0 0 / 25%);
+    transition: 0.5s cubic-bezier(0.4, 0.01, 0.57, 1) margin-left, width;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell.on {
+    border: 2px solid #85D572;
+    background-color: #85D572;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell.off {
+    background-color: #dadada;
+    border: 2px solid #dadada;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell.on div {
+    width: 15px;
+    margin-left: 15px;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell.off div {
+    width: 15px;
+    margin-left: 0px;
+}
+
+.content-wrapper #c-settings .content h4 .listitemcell {
+    display: inline-block;
+    padding: 2px 5px;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    left: 10px;
+    top: 5px;
+}
+
+.content-wrapper #c-settings .content h4 .listitemcell div {
+    display: inline-block;
+    font-size: 10pt;
+    font-weight: 400;
+    padding: 0px 5px;
+    height: 19px;
+    line-height: 19px;
+    border-radius: 4px;
+    margin: 0px 5px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.content-wrapper #c-settings .content h4 .listitemcell div.selected {
+    background-color: white;
+    box-shadow: 0px 0px 15px -1px rgb(0 0 0 / 16%);
+}
+
+.content-wrapper #c-settings .content span {
+    font-size: 13pt;
+    color: #424242;
+}
+
+.content-wrapper #c-settings .content .hidden {
+    display: none;
+}
+
+.content-wrapper #c-settings a {
+    text-decoration: none;
+    color: var(--mainAccent);
+    cursor: pointer;
+}
+
+.content-wrapper #c-settings a:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-settings button {
+    outline: none;
+    border: none;
+    padding: 5px 10px;
+    background-color: var(--mainAccent);
+    color: white;
+    font-weight: 600;
+    font-family: 'SFProDisplay';
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+    margin-bottom: 10px;
 }
 
 .content-wrapper #c-album #album-header {
@@ -1184,7 +1488,7 @@ body {
 .content-wrapper #c-album #album-header .text-wrapper .link {
     display: inline;
     margin-bottom: 0px;
-    color: #fa233b;
+    color: var(--mainAccent);
     cursor: pointer;
     transition: 0.1s ease text-decoration;
 }
@@ -1204,7 +1508,7 @@ body {
 .content-wrapper #c-album #album-header .play-button {
     display: inline-block;
     color: white;
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
     padding: 2px 30px;
     border-radius: 6px;
     font-weight: 600;
@@ -1228,7 +1532,7 @@ body {
 .content-wrapper #c-album #album-header .shuffle-button {
     display: none;
     color: white;
-    background-color: #fa233b;
+    background-color: var(--mainAccent);
     padding: 2px 17px 2px 6px;
     border-radius: 6px;
     font-weight: 600;
@@ -1256,7 +1560,7 @@ body {
 }
 
 .content-wrapper #c-album #album-header i {
-    color: #fa233b;
+    color: var(--mainAccent);
     background-color: #fbfbfb;
     padding: 6px;
     border-radius: 100%;
@@ -1318,7 +1622,7 @@ body {
 }
 
 .content-wrapper #c-album #album-song-list li i {
-    color: #fa233b;
+    color: var(--mainAccent);
     float: right;
     margin-right: 7px;
     line-height: 45px;
@@ -1335,6 +1639,128 @@ body {
     opacity: 0 !important;
 }
 
+.content-wrapper #c-album #album-song-list li:hover .playback-bars__svg {
+    opacity: 0 !important;
+}
+
+/* from Apple */
+
+.content-wrapper #c-album #album-song-list li .playback-bars__svg {
+    will-change: transform;
+    width: 15px;
+    height: 15px;
+
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    pointer-events: none;
+    opacity: 0;
+    transition: 0.1s ease opacity;
+
+}
+
+.content-wrapper #c-album #album-song-list li .playback-bars__bar {
+    transform: translateY(9px);
+    -webkit-animation-name: none;
+    animation-name: none;
+    -webkit-animation-duration: .4s;
+    animation-duration: .4s;
+    -webkit-animation-delay: var(--delay,0);
+    animation-delay: var(--delay,0);
+    -webkit-animation-direction: alternate;
+    animation-direction: alternate;
+    -webkit-animation-timing-function: ease-in;
+    animation-timing-function: ease-in;
+    -webkit-animation-iteration-count: infinite;
+    animation-iteration-count: infinite;
+    fill: var(--mainAccent);
+}
+
+.content-wrapper #c-album #album-song-list li .playback-bars__bar--1 {
+    --max-height-offset: 6px;
+    --delay: 250ms;
+    -webkit-animation-duration: .6s;
+    animation-duration: .6s;
+    --iconic-midpoint-height-offset: 4px;
+    --iconic-height-offset: 7px;
+}
+
+.content-wrapper #c-album #album-song-list li .playback-bars__bar--2 {
+    --max-height-offset: 2px;
+    --delay: 615ms;
+    --iconic-midpoint-height-offset: 2px;
+    --iconic-height-offset: 1px;
+}
+
+.content-wrapper #c-album #album-song-list li .playback-bars__bar--3 {
+    --max-height-offset: 4px;
+    --delay: 475ms;
+    --iconic-midpoint-height-offset: 4px;
+    --iconic-height-offset: 3px;
+}
+
+.content-wrapper #c-album #album-song-list li .playback-bars__bar--4 {
+    --max-height-offset: 2px;
+    --delay: 25ms;
+    --iconic-midpoint-height-offset: 5px;
+    --iconic-height-offset: 6px;
+}
+
+.content-wrapper #c-album #album-song-list li .playing .playback-bars__bar {
+    -webkit-animation-name: playback-bar;
+    animation-name: playback-bar
+}
+
+body.is-not-focused .content-wrapper #c-album #album-song-list li .playing .playback-bars__bar {
+    -webkit-animation-name: playback-bar-iconic;
+    animation-name: playback-bar-iconic;
+    -webkit-animation-iteration-count: 1;
+    animation-iteration-count: 1;
+    -webkit-animation-fill-mode: forwards;
+    animation-fill-mode: forwards;
+    -webkit-animation-delay: 0;
+    animation-delay: 0
+}
+
+body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback-bars__bar {
+    transform: translateY(var(--iconic-height-offset));
+    -webkit-animation-name: playback-bar-refocus,playback-bar;
+    animation-name: playback-bar-refocus,playback-bar;
+    -webkit-animation-iteration-count: 1,infinite;
+    animation-iteration-count: 1,infinite;
+    -webkit-animation-timing-function: linear;
+    animation-timing-function: linear;
+    -webkit-animation-delay: 0;
+    animation-delay: 0
+}
+
+
+@keyframes playback-bar-iconic {
+    0% {
+        transform: translateY(9px)
+    }
+
+    50% {
+        transform: translateY(var(--iconic-midpoint-height-offset))
+    }
+
+    100% {
+        transform: translateY(var(--iconic-height-offset))
+    }
+}
+
+@keyframes playback-bar {
+    from {
+        transform: translateY(9px)
+    }
+
+    to {
+        transform: translateY(var(--max-height-offset))
+    }
+}
+
+/* end from Apple */
+
 .content-wrapper #c-album .bottom {
     display: block;
     margin: 2px 30px;
@@ -1345,6 +1771,24 @@ body {
 .content-wrapper #c-artist {
     background: linear-gradient(0deg, #cecece, white);
 }
+
+.content-wrapper #c-artist #c-artist-loading-item {
+    background-color: white;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+}
+
+.content-wrapper #c-artist #c-artist-loading-item img {
+    width: 40px !important;
+    height: 40px !important;
+    box-shadow: none !important;
+    margin-top: 40vh;
+}
+
 
 .content-wrapper #c-artist #artist-show-parralax {
     width: 100%;
@@ -1526,7 +1970,7 @@ body {
 }
 
 .content-wrapper #c-search #top-results-container i {
-    color: #fa233b;
+    color: var(--mainAccent);
     position: absolute;
     right: 15px;
     bottom: 15px;
@@ -1570,7 +2014,7 @@ body {
 }
 
 .content-wrapper #c-search #artist-results .seeall {
-    color: #fa233b;
+    color: var(--mainAccent);
     position: absolute;
     right: 0px;
     top: -40px;
@@ -1635,7 +2079,7 @@ body {
 }
 
 .content-wrapper #c-search #album-results .seeall {
-    color: #fa233b;
+    color: var(--mainAccent);
     position: absolute;
     right: 0px;
     top: -40px;
@@ -1726,20 +2170,25 @@ body {
     transition: 0.2s ease;
 }
 
+.content-wrapper #c-search #album-results-container div i:hover {
+    background-color: var(--mainAccent);
+}
+
 .content-wrapper #c-search #album-results-container div .left {
     left: 20px;
-    width: 27px;
+    width: 19px;
     height: 21px;
     padding-top: 9px;
-    padding-left: 3px;
+    padding-left: 11px;
     font-size: 12px;
 }
 
 .content-wrapper #c-search #album-results-container div .right {
     right: 20px;
-    width: 30px;
+    width: 25px;
     height: 25px;
     padding-top: 5px;
+    padding-left: 5px;
 }
 
 .content-wrapper #loading-item {
@@ -1800,7 +2249,7 @@ body {
 }
 
 #queue-wrapper li:hover {
-    background-color: ghostwhite;
+    background-color: var(--hoverColor);
 }
 
 #queue-wrapper li img {
@@ -1854,7 +2303,7 @@ body {
     right: 21px;
     top: 0px;
     line-height: 56px;
-    color: #fa233b;
+    color: var(--mainAccent);
     cursor: pointer;
     transition: 0.1s ease opacity;
 }
@@ -1868,7 +2317,7 @@ body {
     font-weight: 400;
     display: block;
     text-align: center;
-    color: #fa233b;
+    color: var(--mainAccent);
     cursor: pointer;
     margin-top: 15px;
     margin-bottom: 30px;
@@ -1949,7 +2398,7 @@ body {
 }
 
 #search-window #suggestion-list li:hover {
-    background-color: ghostwhite;
+    background-color: var(--hoverColor);
 }
 
 #search-window #suggestion-list li img {
@@ -1982,7 +2431,7 @@ body {
 }
 
 #search-window #suggestion-list div:hover {
-    background-color: ghostwhite;
+    background-color: var(--hoverColor);
 }
 
 #search-window #suggestion-list .artist .artwork {
@@ -2007,6 +2456,26 @@ body {
     overflow-x: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+#search-window #suggestion-list div .play {
+    opacity: 0;
+    width: 35px;
+    position: absolute;
+    left: 17px;
+    top: 17px;
+    z-index: 10;
+    pointer-events: none;
+    filter: invert(1);
+    transition: 0.1s ease opacity;
+}
+
+#search-window #suggestion-list div:hover .play {
+    opacity: 1;
+}
+
+#search-window #suggestion-list div:hover .artwork {
+    filter: brightness(0.8);
 }
 
 #search-window #suggestion-list div span {
@@ -2059,6 +2528,7 @@ body {
     max-width: unset !important;
     min-height: unset !important;
     min-width: unset !important;
+    cursor: default !important;
 }
 
 .part-loading-item img {
@@ -2102,7 +2572,7 @@ body {
 }
 
 #context-menu li:hover {
-    background-color: ghostwhite;
+    background-color: var(--hoverColor);
 }
 
 #context-menu li img {

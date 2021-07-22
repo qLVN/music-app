@@ -76,10 +76,20 @@ function playPauseSong() {
         ipcRenderer.send('MusicJS', 'MusicKit.getInstance().play();');
         playPauseButton.src = 'assets/pause.svg';
         ipcRenderer.send('thumbar', 1);
+        document.querySelectorAll('svg').forEach(function(element) {
+            if(element.classList.toString().includes('playback-bars__svg')) {
+                element.classList.add('playing')
+            }
+        });
     } else {
         ipcRenderer.send('MusicJS', 'MusicKit.getInstance().pause();');
         playPauseButton.src = 'assets/play.svg';
         ipcRenderer.send('thumbar', 0);
+        document.querySelectorAll('svg').forEach(function(element) {
+            if(element.classList.toString().includes('playback-bars__svg')) {
+                element.classList.remove('playing')
+            }
+        });
     }
 }
 
@@ -132,7 +142,7 @@ function setPlaybackState(state) {
     // 4: "stopped"
     // 5: "ended"
     // 6: "seeking"
-    // 8: "waiting"
+    // 8: "waiting" //when song is not loaded
     // 9: "stalled"
     // 10: "completed"
     playbackState = state;
@@ -211,9 +221,9 @@ function setPlaybackState(state) {
             ipcRenderer.send('thumbar', 0);
             break;
         case 8:
-            setControlButtonsEnabled(false);
-            playbackSlider.style.opacity = 0;
-            document.getElementById('idle-logo').style.top = '7px';
+            setControlButtonsEnabled(true);
+            playbackSlider.style.opacity = 1;
+            document.getElementById('idle-logo').style.top = '40px';
             ipcRenderer.send('thumbar', 0);
             break;
         case 9:
@@ -236,6 +246,8 @@ function setPlaybackTime(time) {
     playbackSlider.value = time;
     var value = (playbackSlider.value-playbackSlider.min)/(playbackSlider.max-playbackSlider.min)*100;
     playbackSlider.style.background = 'linear-gradient(to right, #797979 0%, #797979 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+
+    if(document.getElementById('player-info').style.display == 'none') document.getElementById('player-info').style.display = 'block';
 }
 
 function setQueueItems(items) {
@@ -278,7 +290,7 @@ function setQueueItems(items) {
 
 var nowPlayingItem;
 
-function setNowPlayingItem(name, artwork, artist, album, duration, index) {
+function setNowPlayingItem(name, artwork, artist, album, duration, index, id) {
     nowPlayingItem = { name: name, artwork: artwork, artist: artist, album: album, index: index };
 
     activity.details = '🎵 ' + name;
@@ -306,6 +318,22 @@ function setNowPlayingItem(name, artwork, artist, album, duration, index) {
     document.getElementById('playback-progress-slider').setAttribute('max', duration);
     
     playerInfo.style.opacity = '1';
+
+    if(selectedNavbar == 'album') {
+        document.querySelectorAll('.album-show-song-line').forEach(function(element) {
+           if(element.getAttribute('song_id') == id) {
+               element.querySelector('svg').style.opacity = 1;
+               element.querySelector('svg').classList.add('playing');
+               element.querySelector('.index').style.opacity = 0;
+               element.querySelector('img').src = 'assets/pause.svg';
+           } else {
+            element.querySelector('svg').style.opacity = 0;
+            element.querySelector('svg').classList.remove('playing');
+            element.querySelector('.index').style.opacity = 1;
+            element.querySelector('img').src = 'assets/play.svg';
+           }
+        });
+    }
 }
 
 function toggleShuffle(button, customValue) {

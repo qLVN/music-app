@@ -1,11 +1,14 @@
 const { time } = require("console");
 const { create } = require("domain");
 const fs = require("fs");
+
 const dataFolderPath = (electron.app || electron.remote.app).getPath('userData');
+const userPrefsPath = dataFolderPath + "/data/user_prefs.json";
 
 var app_version;
 
 var playlists;
+var listenNow;
 var recentlyAdded;
 var recentlyAddedOffset = 0;
 var artists;
@@ -15,13 +18,23 @@ var albumsOffset = 0;
 var songs;
 var songsOffset = 0;
 
+var prefs = { //also default settings
+    startup: false,
+    minimizeClosing: true,
+    trayIcon: true,
+    rpc: true,
+    performanceMode: false,
+    disableMediaButtons: false,
+    rememberShuffleRepeatStates: true,
+    rpcMode: 'app',
+    colorMode: 'system',
+}
+
 async function loadAppData() {
     ipcRenderer.send('app_version');
     ipcRenderer.on('app_version', (event, arg) => {
         ipcRenderer.removeAllListeners('app_version');
-        console.log("RLTrader version is " + arg.version);
-        document.getElementById('update-app-version').innerText = "Version " + arg.version;
-        document.getElementById('settings-app-version').innerText = "Version " + arg.version;
+        app_version = arg.version;
     });
     if(fs.existsSync(dataFolderPath + "/data/")) {
         var userDataPath = dataFolderPath + "/data/userdata.json";
@@ -30,16 +43,19 @@ async function loadAppData() {
             document.querySelectorAll('img').forEach(function(img) {
                 img.setAttribute('draggable', 'false');
             });
+            loadPrefs();
             if(userDataContent.isConnected != 1) { //user is not connected
                 navBarSelect(); //no need to add args as we aren't connected
             } else {
                 ipcRenderer.send('thumbar', 0);
+                ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();');
                 var volumeSlider = document.getElementById('volume');
                 volumeSlider.value = userDataContent.lastVolume;
                 var value = (volumeSlider.value-volumeSlider.min)/(volumeSlider.max-volumeSlider.min)*100;
                 volumeSlider.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
                 ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
                 navBarSelect(userDataContent.lastOpenedNavbarItem);
+                document.getElementById('listen-now-loading-item').style.display = 'block';
                 document.getElementById('recently-added-loading-item').style.display = 'block';
                 document.getElementById('albums-loading-item').style.display = 'block';
                 document.getElementById('artists-loading-item').style.display = 'block';
@@ -59,6 +75,10 @@ async function loadAppData() {
                 } else {
                     document.getElementById('playlists-status').innerHTML = 'Playlists';
                 }
+                listenNow = await saveListenNow();
+                insertListenNow();
+                document.getElementById('listen-now-loading-item').style.display = 'none';
+
                 recentlyAdded = await saveRecentlyAdded(0);
                 insertRecentlyAdded();
                 document.getElementById('recently-added-loading-item').style.display = 'none';
@@ -84,6 +104,44 @@ async function loadAppData() {
     } else {
         fs.mkdirSync(dataFolderPath + "/data/");
         loadAppData();
+    }
+}
+
+function loadPrefs() {
+    if (fs.existsSync(dataFolderPath + "/data/")) {
+        if (fs.existsSync(userPrefsPath)) {
+            var userPrefsContent = JSON.parse(fs.readFileSync(userPrefsPath, 'utf-8').toString());
+            var userPrefs = userPrefsContent.preferences;
+            Object.keys(prefs).forEach(function(key) {
+                if(userPrefs[key] === undefined) {
+                    userPrefs[key] = prefs[key];
+                } else {
+                    prefs[key] = userPrefs[key];
+                }
+            });
+            fs.writeFileSync(userPrefsPath, JSON.stringify(userPrefsContent, null, 4));
+            //set switchs etc
+            switchCellSetting(document.getElementById('settings-startup'), 'startup', prefs['startup'], false);
+            switchCellSetting(document.getElementById('settings-minimizeclosing'), 'minimizeClosing', prefs['minimizeClosing'], false);
+            switchCellSetting(document.getElementById('settings-trayicon'), 'trayIcon', prefs['trayIcon'], false);
+            switchCellSetting(document.getElementById('settings-rpc'), 'rpc', prefs['rpc'], false);
+            switchCellSetting(document.getElementById('settings-performancemode'), 'performanceMode', prefs['performanceMode'], false);
+            switchCellSetting(document.getElementById('settings-disablemediabuttons'), 'disableMediaButtons', prefs['disableMediaButtons'], false);
+            switchCellSetting(document.getElementById('settings-remembershufflerepeatstates'), 'rememberShuffleRepeatStates', prefs['rememberShuffleRepeatStates'], false);
+            listItemCellSetting(document.getElementById('settings-rpcmode'), 'rpcMode', prefs['rpcMode'], false);
+            listItemCellSetting(document.getElementById('settings-colormode'), 'colorMode', prefs['colorMode'], false);
+        } else {
+            console.log("File user_prefs.json not found, creating one..");
+
+            var initialContent = { "preferences": {} };
+            fs.writeFileSync(userPrefsPath, JSON.stringify(initialContent, null, 4), 'utf-8');
+            loadPrefs();
+            return;
+        }
+    } else {
+        fs.mkdirSync(dataFolderPath + "/data/");
+        loadPrefs();
+        return;
     }
 }
 
@@ -151,6 +209,62 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAppData();
 });
 
+function revealSettingsAdvanced(toggle) {
+    var advA = document.getElementById('settings-adv-a');
+    var adv = document.getElementById('settings-adv');
+
+    if(toggle) {
+        advA.className = 'hidden';
+        adv.className = '';
+    } else {
+        advA.className = '';
+        adv.className = 'hidden';
+    }
+}
+
+function switchCellSetting(switchCell, setting, value, save) {
+    if(value === undefined) {
+        if(switchCell.className == 'switchcell off') {
+            value = true;
+        } else {
+            value = false;
+        }
+    }
+    switch(value) {
+        case false: //'switchcell on'
+            switchCell.className = 'switchcell off';
+            break;
+        case true: //'switchcell off'
+            switchCell.className = 'switchcell on';
+            break;
+        default:
+            //show error alert
+            break;
+    }
+
+    if(save === undefined || save) {
+        setPrefForValue(setting, value);
+    }
+}
+
+function listItemCellSetting(settingCell, setting, value, save) { //settingCell is the cell, not the div where the value is
+    settingCell.childNodes.forEach(function(item) {
+        if(item.getAttribute('value') == value) item.className = 'selected';
+        else item.className = '';
+
+        if(save === undefined || save) {
+            setPrefForValue(setting, value);
+        }
+    });
+}
+
+function setPrefForValue(pref, value) {
+    var userPrefsContent = JSON.parse(fs.readFileSync(userPrefsPath, 'utf-8').toString());
+    var userPrefs = userPrefsContent.preferences;
+    userPrefs[pref] = value;
+    fs.writeFileSync(userPrefsPath, JSON.stringify(userPrefsContent, null, 4));
+}
+
 var lastRecentlyAddedScrollHeight = 0;
 
 async function scrollingRecentlyAdded() {
@@ -160,6 +274,139 @@ async function scrollingRecentlyAdded() {
         recentlyAdded = await saveRecentlyAdded(recentlyAddedOffset);
         insertRecentlyAdded();
     }
+}
+
+function insertListenNow() {
+    Object.keys(listenNow).forEach(function(key) {
+        var partWrapper = document.createElement('div');
+        partWrapper.className = 'part-wrapper';
+        partWrapper.setAttribute('align', 'center');
+        var subHeader = document.createElement('h4');
+        if(subHeader.innerHTML = listenNow[key]['attributes']['title'] == undefined) return;
+        subHeader.innerHTML = listenNow[key]['attributes']['title']['stringForDisplay'];
+        partWrapper.appendChild(subHeader);
+
+        switch(listenNow[key]['attributes']['display']['kind']) {
+            case 'MusicNotesHeroShelf':
+                Object.keys(listenNow[key]['relationships']['contents']['data']).forEach(function(item) {
+                    var heroWrapper = document.createElement('div');
+                    heroWrapper.className = 'hero-wrapper';
+
+                    var heroTitle = document.createElement('span');
+                    if(listenNow[key]['relationships']['contents']['data'][item]['meta'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'] !== undefined) heroTitle.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'];
+                    heroWrapper.appendChild(heroTitle);
+
+                    var artworkWrapper = document.createElement('div');
+                    var artworkImg = document.createElement('img');
+
+                    var img = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '300').replace('{h}', '300').replace('{f}', 'png').replace('{c}', '');
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['editorialVideo'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['attributes']['editorialVideo']['motionSquareVideo1x1'] !== undefined) {
+                        img = listenNow[key]['relationships']['contents']['data'][item]['attributes']['editorialVideo']['motionSquareVideo1x1']['previewFrame']['url'].replace('{w}', '300').replace('{h}', '300').replace('{f}', 'png').replace('{c}', '');
+                    }
+
+                    artworkImg.src = img;
+                    artworkImg.setAttribute('draggable', 'false');
+                    artworkWrapper.appendChild(artworkImg);
+
+                    var artworkBottom = document.createElement('div');
+                    var artworkBottomBlur = document.createElement('div');
+                    artworkBottomBlur.className = 'bottom-blur';
+
+                    artworkBottom.appendChild(artworkBottomBlur);
+
+                    var color = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].split('{h}')[0].replace('{w}', '40').replace('{h}', '40') + '40br-60.jpg';
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['editorialVideo'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['attributes']['editorialVideo']['motionS1quareVideo1x1'] !== undefined) {
+                        color = listenNow[key]['relationships']['contents']['data'][item]['attributes']['editorialVideo']['motionS1quareVideo1x1']['previewFrame']['url'].replace('{w}', '40').replace('{h}', '40').replace('{f}', 'jpg').replace('{c}', 'br-60');
+                    }
+
+                    artworkBottom.style.backgroundImage = 'url(' + color + ')';
+                    var contentSpan = document.createElement('span');
+                    var releaseDate = '';
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['releaseDate'] !== undefined) releaseDate = '<br>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['releaseDate'].substring(0, 4);
+                    var artist = '';
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistName'] !== undefined) artist = '<br><a>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistName'] + '</a>';
+                    
+                    if(listenNow[key]['relationships']['contents']['data'][item]['type'] == 'playlists') {
+                        if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistNames'] !== undefined) {
+                            contentSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistNames'];
+                        } else {
+                            if(listenNow[key]['relationships']['contents']['data'][item]['type'] == 'playlists') {
+                                if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['description'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['attributes']['description']['short'] !== undefined) {
+                                    contentSpan.innerHTML = '<b>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'] + '</b><br>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['description']['short'];
+                                } else {
+                                    contentSpan.innerHTML = '<b>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'] + '</b><br>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['curatorName'];
+                                }
+                            } else {
+                                contentSpan.innerHTML = '<b>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'] + '</b>';
+                            }
+                        }
+                    } else {
+                        contentSpan.innerHTML = '<b>' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'] + '</b>'+ artist + releaseDate;
+                    }
+                    artworkBottom.appendChild(contentSpan);
+
+                    artworkWrapper.appendChild(artworkBottom);
+                    heroWrapper.appendChild(artworkWrapper);
+                    partWrapper.appendChild(heroWrapper);
+                });
+
+                document.getElementById('c-listen-now').appendChild(partWrapper);
+                break;
+            case 'MusicCoverShelf':
+                Object.keys(listenNow[key]['relationships']['contents']['data']).forEach(function(item) {
+                    var itemWrapper = document.createElement('div');
+                    itemWrapper.className = 'item-wrapper';
+
+                    var artworkImg = document.createElement('img');
+                    artworkImg.setAttribute('draggable', 'false');
+                    if(artworkImg.src = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] !== undefined) {
+                        artworkImg.src = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png').replace('{c}', '');
+
+                    } else {
+                        return;
+                    }
+                    var titleSpan = document.createElement('span');
+                    titleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'];
+
+                    var subtitleSpan = document.createElement('span');
+                    subtitleSpan.className = 'subtitle';
+                    subtitleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistName'];
+
+                    itemWrapper.appendChild(artworkImg);
+                    itemWrapper.appendChild(titleSpan);
+                    itemWrapper.appendChild(subtitleSpan);
+                    partWrapper.appendChild(itemWrapper);
+                });
+
+                document.getElementById('c-listen-now').appendChild(partWrapper);
+                break;
+            default:
+                console.log('Skipping unknown DisplayKind for insertListenNow(): "' + listenNow[key]['attributes']['display']['kind'] + '"');
+                break;
+        }
+    });
+}
+
+function saveListenNow() {
+    return new Promise(resolve => {
+        var url = "https://amp-api.music.apple.com/v1/me/recommendations?timezone=%2B02%3A00&with=friendsMix%2Clibrary&name=listen-now&art%5Burl%5D=c%2Cf&omit%5Bresource%5D=autos&relate%5Beditorial-items%5D=contents&extend=editorialCard%2CeditorialVideo&extend%5Balbums%5D=artistUrl&extend%5Bplaylists%5D=artistNames%2CeditorialArtwork&extend%5Bsocial-profiles%5D=topGenreNames&include%5Balbums%5D=artists&include%5Bsongs%5D=artists&include%5Bmusic-videos%5D=artists&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2CeditorialVideo%2Cname%2CplayParams%2CreleaseDate%2Curl&fields%5Bartists%5D=name%2Curl&extend%5Bstations%5D=airDate%2CsupportsAirTimeUpdates&meta%5Bstations%5D=inflectionPoints&types=artists%2Calbums%2Ceditorial-items%2Clibrary-albums%2Clibrary-playlists%2Cmusic-movies%2Cmusic-videos%2Cplaylists%2Cstations%2Cuploaded-audios%2Cuploaded-videos%2Cactivities%2Capple-curators%2Ccurators%2Ctv-shows&relate=catalog&l=en-gb&platform=web";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+
+        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI1NzgxODY3LCJleHAiOjE2NDEzMzM4Njd9.yWOQkHcO59ydmtgIzP9TDB_Oasd_u-VNSzP-WJ1Fo_GUlICKq_LU9or5ABFx3EAF9geYHvBkIXvuCbVApN12sg");
+        xhr.setRequestHeader("cache-control", "no-cache");
+        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
+        xhr.setRequestHeader("accept", "*/*");
+        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+
+        xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            resolve(JSON.parse(xhr.responseText)['data']);
+        }};
+
+        xhr.send();
+    });
 }
 
 function insertRecentlyAdded() {
@@ -183,6 +430,13 @@ function insertRecentlyAdded() {
 
         var artworkText = document.createElement('h5');
         artworkText.innerHTML = recentlyAdded[key]['attributes']['name'] + '<span>' + recentlyAdded[key]['attributes']['artistName'] + '</span>';
+
+        if(recentlyAdded[key]['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0] !== undefined) {
+            var id = recentlyAdded[key]['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0]['id'];
+        } else {
+            var id = 0;
+        }
+        artworkText.setAttribute('onclick', 'presentArtist("' + id + '")');
         artworkWrapper.appendChild(artworkText);
 
         document.getElementById('c-recently-added').appendChild(artworkWrapper);
@@ -483,7 +737,7 @@ function getOnlineAlbumData(id) {
     });
 }
 
-function getArtistData(id) {
+function getArtistData(id) { //online id
     return new Promise(resolve => {
         var url = "https://amp-api.music.apple.com/v1/catalog/fr/artists/" + id + "?l=en-gb&platform=web&omit%5Bresource%5D=autos&views=featured-release%2Cfull-albums%2Cappears-on-albums%2Cfeatured-albums%2Cfeatured-on-albums%2Csingles%2Ccompilation-albums%2Clive-albums%2Clatest-release%2Ctop-music-videos%2Csimilar-artists%2Ctop-songs%2Cplaylists%2Cmore-to-hear%2Cmore-to-see&extend=artistBio%2CbornOrFormed%2CeditorialArtwork%2CeditorialVideo%2CisGroup%2Corigin%2Chero&extend%5Bplaylists%5D=trackCount&omit%5Bresource%3Asongs%5D=relationships&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl%2CtrackCount&limit[artists%3Atop-songs]=20&art%5Burl%5D=f";
 
@@ -509,14 +763,29 @@ function selectSongInAlbumShow(line) {
         element.removeAttribute('style');
         element.querySelector('.fa-ellipsis-h').removeAttribute('style');
         element.querySelector('img').removeAttribute('style');
-        element.querySelector('.index').removeAttribute('style');
-    })
+        
+        if(element.querySelector('svg').style.opacity == 1) {
+            element.querySelectorAll('.playback-bars__bar').forEach(function(bar) {
+                bar.style.fill = 'var(--mainAccent)';
+            });
+        } else {
+            element.querySelector('.index').removeAttribute('style');
+        }
+    });
     line.style.backgroundColor = 'rgb(250, 35, 59)';
     line.style.color = 'white';
 
     line.querySelector('.fa-ellipsis-h').style.color = 'white';
-    line.querySelector('.index').style.opacity = '1';
+    if(line.querySelector('svg').style.opacity == 1) {
+        line.querySelector('.index').style.opacity = 0;
+    } else {
+        line.querySelector('.index').style.opacity = 1;
+    }
+    
     line.querySelector('img').style.filter = 'invert(1)';
+    line.querySelectorAll('.playback-bars__bar').forEach(function(element) {
+        element.style.fill = 'white';
+    });
 }
 
 function selectSongInQueue(line) {
@@ -636,6 +905,26 @@ function isInLibrary(id, type) { //online id
         }};
 
         xhr.send();
+    });
+}
 
+function getAlbumIdForOnlineSong(id) { //online id
+    return new Promise(resolve => {
+        var url = "https://amp-api.music.apple.com/v1/catalog/fr/?ids%5Bsongs%5D=" + id + "&l=en-gb&platform=web";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        
+        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
+        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
+        xhr.setRequestHeader("accept", "*/*");
+        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+        
+        xhr.onreadystatechange = function () {
+           if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data'][0]['relationships']['albums']['data'][0]['id']);
+           }};
+        
+        xhr.send();        
     });
 }

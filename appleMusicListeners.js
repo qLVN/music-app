@@ -13,7 +13,7 @@ MusicKit.getInstance().addEventListener(MusicKit.Events.playbackTimeDidChange, f
 
 MusicKit.getInstance().addEventListener(MusicKit.Events.nowPlayingItemDidChange, function() {
     if(MusicKit.getInstance().nowPlayingItem === undefined) return;
-    window.ipcRenderer.send('updateNowPlayingItem', MusicKit.getInstance().nowPlayingItem['attributes']['name'], MusicKit.getInstance().nowPlayingItem['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50'), MusicKit.getInstance().nowPlayingItem['attributes']['artistName'], MusicKit.getInstance().nowPlayingItem['attributes']['albumName'], Math.round(MusicKit.getInstance().nowPlayingItem['attributes']['durationInMillis'] / 1000), MusicKit.getInstance().nowPlayingItemIndex);
+    window.ipcRenderer.send('updateNowPlayingItem', MusicKit.getInstance().nowPlayingItem['attributes']['name'], MusicKit.getInstance().nowPlayingItem['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50'), MusicKit.getInstance().nowPlayingItem['attributes']['artistName'], MusicKit.getInstance().nowPlayingItem['attributes']['albumName'], Math.round(MusicKit.getInstance().nowPlayingItem['attributes']['durationInMillis'] / 1000), MusicKit.getInstance().nowPlayingItemIndex, MusicKit.getInstance().nowPlayingItem['id']);
 });
 
 MusicKit.getInstance().addEventListener(MusicKit.Events.queueItemsDidChange, function() {
