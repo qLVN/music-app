@@ -354,17 +354,15 @@ function insertListenNow() {
                 break;
             case 'MusicCoverShelf':
                 Object.keys(listenNow[key]['relationships']['contents']['data']).forEach(function(item) {
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] == undefined) return;
+
                     var itemWrapper = document.createElement('div');
                     itemWrapper.className = 'item-wrapper';
+                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
                     var artworkImg = document.createElement('img');
                     artworkImg.setAttribute('draggable', 'false');
-                    if(artworkImg.src = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] !== undefined) {
-                        artworkImg.src = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png').replace('{c}', '');
-
-                    } else {
-                        return;
-                    }
+                    artworkImg.src = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png').replace('{c}', '');
                     var titleSpan = document.createElement('span');
                     titleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'];
 

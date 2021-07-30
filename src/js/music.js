@@ -642,6 +642,7 @@ async function showContextMenu(type, id, element, online, id_type) {
             if(online) {
                 if(await isInLibrary(id, id_type)) {
                     removeFromLibrary.style.display = 'block';
+                    removeFromLibrary.addAttribute('onclick', ''); //remove from library
                 } else {
                     addToLibrary.style.display = 'block';
                 }
