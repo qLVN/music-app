@@ -166,7 +166,11 @@ function hideSearchBar() {
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("volume").oninput = function() {
         var value = (this.value-this.min)/(this.max-this.min)*100;
-        this.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+        if(prefs['colorMode'] == 'dark' || prefs['colorMode'] == 'system' && systemColorMode == 'dark') {
+            this.style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
+        } else {
+            this.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+        }
         ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + this.value + ';');
         var userDataPath = dataFolderPath + "/data/userdata.json";
         var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
@@ -176,7 +180,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("playback-progress-slider").oninput = function() {
         ipcRenderer.send("MusicJS", "MusicKit.getInstance().seekToTime(" + this.value + ")");
         var value = (this.value-this.min)/(this.max-this.min)*100;
-        this.style.background = 'linear-gradient(to right, #797979 0%, #797979 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+        if(prefs['colorMode'] == 'dark' || prefs['colorMode'] == 'system' && systemColorMode == 'dark') {
+            this.style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
+        } else {
+            this.style.background = 'linear-gradient(to right, #797979 0%, #797979 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+        }
     };
     document.getElementById('search').onkeydown = function(e) {
         if(e.key === 'Enter') {
@@ -223,8 +231,13 @@ function navBarSelect(id, isExtra) {
             document.getElementById($(this).attr('id')).style.boxShadow = 'none';
         });
         if(!isExtra) {
-            document.getElementById('nb-' + id).style.backgroundColor = '#e2e2e2';
-            document.getElementById('nb-' + id).style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
+            if(prefs['colorMode'] == 'dark' || prefs['colorMode'] == 'system' && systemColorMode == 'dark') {
+                document.getElementById('nb-' + id).style.backgroundColor = 'rgb(86 86 86)';
+                document.getElementById('nb-' + id).style.boxShadow = 'rgb(23 24 25 / 20%) 0px 8px 24px';
+            } else {
+                document.getElementById('nb-' + id).style.backgroundColor = '#e2e2e2';
+                document.getElementById('nb-' + id).style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
+            }
         }
         $('.c-item').each(function() {
             document.getElementById($(this).attr('id')).style.display = 'none';
@@ -393,7 +406,7 @@ async function presentOnlineAlbum(id) {
             sec = '0' + sec;
         }
 
-        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="showContextMenu(\'media\', \'' + albumData['relationships']['tracks']['data'][song]['id'] + '\', this, true, \'songs\')"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="showContextMenu(\'media\', \'' + albumData['relationships']['tracks']['data'][song]['id'] + '\', this, true, \'songs\', \'album\')"></i><span class="time">' + min + ':' + sec + '</span>';
         songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
 
         document.getElementById('album-song-list').appendChild(songLi);
@@ -625,7 +638,11 @@ function toggleSearchWindow() {
     }
 }
 
-async function showContextMenu(type, id, element, online, id_type) {
+async function showContextMenu(type, id, element, online, id_type, pane) {
+    //
+    // online is if the item is in the library or in Apple Music
+    // pane is eg. recently-added
+    //
     var contextMenu = document.getElementById('context-menu');
 
     var addToLibrary = document.getElementById('context-menu-addlibrary');
@@ -636,13 +653,19 @@ async function showContextMenu(type, id, element, online, id_type) {
     removeFromLibrary.style.display = 'none';
     contextMedia.style.display = 'none';
 
+    document.querySelectorAll('[contexted]').forEach(function(contextedElement) {
+        contextedElement.removeAttribute('contexted');
+    });
+
+    element.setAttribute('contexted', true);
+
     switch(type) {
         case 'media':
             contextMedia.style.display = 'block';
             if(online) {
                 if(await isInLibrary(id, id_type)) {
                     removeFromLibrary.style.display = 'block';
-                    removeFromLibrary.addAttribute('onclick', ''); //remove from library
+                    removeFromLibrary.addAttribute('onclick', 'prepareRemoveItemFromLibrary("' + id + '", "' + id_type + '", "' + pane + '")'); //remove from library
                 } else {
                     addToLibrary.style.display = 'block';
                 }
@@ -672,4 +695,45 @@ async function showContextMenu(type, id, element, online, id_type) {
             contextMenu.style.opacity = 1;
         }, 200);
     }, 10); //important
+}
+
+function changeAppColorMode(color) { console.log('ff');
+    if(color == 'system') {
+        color = systemColorMode;
+    }
+
+    var value = (document.getElementById("volume").value-document.getElementById("volume").min)/(document.getElementById("volume").max-document.getElementById("volume").min)*100;
+
+    switch(color) {
+        case 'light':
+            $('.nb-item').each(function() {
+                if(document.getElementById($(this).attr('id')).style.backgroundColor == 'rgb(86, 86, 86)') {
+                    document.getElementById($(this).attr('id')).style.backgroundColor = 'rgb(226, 226, 226)';
+                    document.getElementById($(this).attr('id')).style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
+                }
+            });
+            document.getElementById("volume").style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+            $('link[href="css/darkmode.css"]').remove();
+            break;
+        case 'dark':
+            $('.nb-item').each(function() {
+                if(document.getElementById($(this).attr('id')).style.backgroundColor == 'rgb(226, 226, 226)') {
+                    document.getElementById($(this).attr('id')).style.backgroundColor = 'rgb(86, 86, 86)';
+                    document.getElementById($(this).attr('id')).style.boxShadow = 'rgba(23, 24, 25, 0.2) 0px 8px 24px';
+                }
+            });
+            document.getElementById("volume").style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
+            $('link[href="css/darkmode.css"]').remove();
+            $('head').append('<link rel="stylesheet" href="css/darkmode.css" type="text/css" />');
+            break;
+    }
+}
+
+function changeAppPerformanceMode(bool) {
+    if(bool) { //enable
+        $('style[id="performance-mode-css"]').remove();
+        $('head').append('<style id="performance-mode-css">* { transition: none !important; animation: none !important; }</style>');
+    } else {
+        $('style[id="performance-mode-css"]').remove();
+    }
 }

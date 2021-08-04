@@ -1,0 +1,215 @@
+:root {
+    --mainAccent:  #fa233b;
+    --mainAccentInvert: #00f3ff;
+    --hoverColor: #3c3c3c;
+    --black1: white;
+    --white1: #2f2f2f;
+    --white2: #232323;
+    --white3: #464646;
+}
+
+html, body {
+    color: white;
+}
+
+::-webkit-scrollbar-track {
+    background: #292929;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #383838;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #484848;
+}
+
+.toolbar {
+    box-shadow: rgb(0 0 0 / 20%) 0px 0px 17px;
+}
+
+.toolbar #queue-button {
+    filter: invert(1) !important;
+}
+
+.toolbar .music-wrapper {
+    filter: invert(1);
+}
+
+.toolbar .player-wrapper #idle-logo-wrapper img, .toolbar .player-wrapper .search, .toolbar .player-wrapper .cancel {
+    filter: invert(1);
+}
+
+.toolbar .volume-wrapper input::-webkit-slider-thumb {
+    border: 1px solid #828282;
+}
+
+.toolbar .player-wrapper input[type=text] {
+    color: #cbcbcb;
+}
+
+.toolbar .control-wrapper img {
+    filter: invert(1);
+}
+
+.toolbar .control-wrapper img:hover {
+    background-color: #a6a6a6;
+}
+
+.toolbar .control-wrapper img:active {
+    background-color: #8b8b8b !important;
+    filter: invert(1);
+}
+
+.toolbar .control-wrapper .red:active {
+    filter: contrast(0.5) invert(1);
+    background-color: #00ffe7 !important;
+}
+
+.toolbar .control-wrapper .red:hover {
+    background-color: var(--mainAccentInvert);
+}
+
+.content-wrapper h1 {
+    color: #e7e7e7;
+}
+
+.content-wrapper #c-recently-added div img {
+    box-shadow: rgb(0 0 0 / 20%) 0px 7px 29px 0px;
+}
+
+#queue-wrapper {
+    background-color: #333333eb;
+    border-left: 1px solid #383838;
+}
+
+.library-wrapper {
+    background-color: #000000b0;
+}
+
+.library-wrapper .bottom {
+    background-color: #000000b0 !important;
+}
+
+.library-wrapper .bottom:active {
+    background-color: #000000b0 !important;
+}
+
+.library-wrapper div {
+    color: rgb(236 236 236 / 85%);
+}
+
+.library-wrapper div img {
+    filter: invert(1);
+}
+
+.library-wrapper span {
+    color: #cecece;
+}
+
+#search-window {
+    background-color: #383838e3;
+    border: 1px solid #464646;
+}
+
+#search-window #suggestion-list li img {
+    filter: invert(1);
+}
+
+#search-window .search-type-wrapper {
+    background-color: #4c4c4cde;
+}
+
+#search-window #suggestion-list div:hover .go {
+    filter: invert(1);
+}
+
+#search-window #suggestion-list div {
+    border-top: 1px solid #525252;
+}
+
+.content-wrapper #c-listen-now .part-wrapper .hero-wrapper div {
+    box-shadow: rgb(24 25 26 / 20%) 0px 8px 24px;
+}
+
+.content-wrapper #c-search #top-results-container div {
+    background-color: #292929;
+    border: 1px solid #404040;
+    box-shadow: rgb(15 16 16 / 20%) 0px 8px 24px;
+}
+
+.content-wrapper #c-search #artist-results-container div img {
+    border: 1px solid #424242;
+    box-shadow: rgb(15 16 16 / 20%) 0px 8px 24px;
+}
+
+.content-wrapper #c-search #album-results-container div img {
+    border: 1px solid #424242;
+    box-shadow: rgb(15 16 16 / 20%) 0px 8px 24px;
+}
+
+.content-wrapper #c-settings .separator {
+    background-color: #4c4c4c;
+}
+
+.content-wrapper #c-settings .content span {
+    color: #9a9a9a;
+}
+
+.content-wrapper #c-settings .content h4 .listitemcell {
+    background-color: #444444;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell.off {
+    background-color: #6f6f6f;
+    border: 2px solid #6f6f6f;
+}
+
+.content-wrapper #c-artists #artists-navbar {
+    border-right: 1px solid #373737;
+}
+
+.content-wrapper #c-artists #artists-navbar div {
+    border-bottom: 1px solid #383838;
+}
+
+.content-wrapper #c-artists #artists-navbar div img {
+    box-shadow: rgb(5 5 6 / 20%) 0px 8px 24px;
+}
+
+.content-wrapper #c-artists #artist-tab #artist-albums div img {
+    box-shadow: rgb(0 0 0 / 20%) 0px 7px 29px 0px;
+}
+
+.content-wrapper #c-artists #artist-tab img {
+    box-shadow: rgb(0 0 0 / 20%) 0px 7px 29px 0px;
+}
+
+.content-wrapper #c-artists #artists-navbar div .no-image {
+    box-shadow: rgb(215 215 255 / 20%) 0px 8px 24px;
+}
+
+#context-menu {
+    background-color: #4e4e4eba;
+    border: 1px solid #545454;
+}
+
+#context-menu li {
+    border: 1px solid #545454;
+}
+
+#context-menu li img {
+    filter: invert(1);
+}
+
+.content-wrapper #c-album #album-header img {
+    box-shadow: rgb(26 26 29 / 55%) 0px 7px 29px 0px;
+}
+
+.content-wrapper #c-artist {
+    background: linear-gradient(0deg, #2d2d2d, #383838);
+}
+
+.content-wrapper #c-account #account-connected .right span {
+    color: #ffffff8f;
+}

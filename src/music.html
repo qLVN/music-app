@@ -8,17 +8,17 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>
         <!-- <script src="https://js-cdn.music.apple.com/musickit/v2/amp/musickit.js?t=1624321262915"></script> -->
         <link rel="stylesheet" href="css/music.css" />
-        <script src="js/music.js"></script>
+        <script src="js/ui.js"></script>
         <script src="js/data.js"></script>
         <script src="js/musickit.js"></script>
-        <!-- <script src="js/appleservices.js"></script> -->
+        <script src="js/appleservices.js"></script>
     </head>
     <body>
         <div class="toolbar">
             <div class="control-wrapper" align="center">
-                <img src="assets/minimize.png" onclick="ipcRenderer.send('minimize_app');" />
-                <img src="assets/maximize.png" onclick="ipcRenderer.send('maximize_app');" id="maximize-img" />
-                <img src="assets/times_bold.png" class="red" onclick="ipcRenderer.send('close_app');" />
+                <img src="assets/minimize.png" draggable="false" onclick="ipcRenderer.send('minimize_app');" />
+                <img src="assets/maximize.png" draggable="false" onclick="ipcRenderer.send('maximize_app');" id="maximize-img" />
+                <img src="assets/times_bold.png" draggable="false" class="red" onclick="ipcRenderer.send('close_app');" />
             </div>
             <img src="assets/queue.svg" id="queue-button" onclick="toggleQueue()" style="background-color: transparent;" />
             <div class="volume-wrapper">
@@ -127,11 +127,27 @@
                 </div>
             </div>
             <div class="c-item" id="c-account">
-                <div class="login-wrapper">
+                <div id="account-not-connected" class="login-wrapper">
                     <h1>You are not connected</h1>
                     <h4>Login to get access to the entire Apple Music library</h4>
                     <br />
                     <div class="button" onclick="loginToApple()">Login to Apple Music</div>
+                </div>
+                <div id="account-connected">
+                    <div class="left">
+                        <img src="assets/musicAccount.png" />
+                    </div>
+                    <div class="right">
+                        <h1>You are connected to Apple Music.</h1>
+                        <div class="separator"></div>
+                        <h3>Apple ID</h3>
+                        <span>cinquem.larue@icloud.com <a onclick="shell.openExternal('https://appleid.apple.com/')">Edit <img src="assets/externalArrow.png" /></a></span>
+                        <h3>Country / Region</h3>
+                        <span>France</span>
+                        <h3>Apple ID Balance</h3>
+                        <span>0,00 €</span>
+                        <a onclick="shell.openExternal('https://music.apple.com/includes/commerce/redeem/code-entry')">Redeem Promotional Code <img src="assets/externalArrow.png" /></a>
+                    </div>
                 </div>
                 <div id="loading-account" align="center">
                     <img src="assets/loading.gif" id="loading-account-wheel" />
@@ -187,7 +203,7 @@
                         <h3>Music</h3>
                     </div>
                     <div class="content">
-                        <h4 style="margin-top: 0px;">Disable media controls buttons <div id="settings-disablemediabuttons" onclick="switchCellSetting(this, 'disableMediaButtons')" class="switchcell"><div></div></div></h4>
+                        <h4 style="margin-top: 0px;">Disable media controls keys <div id="settings-disablemediabuttons" onclick="switchCellSetting(this, 'disableMediaButtons')" class="switchcell"><div></div></div></h4>
                         <h4>Remember shuffle and repeat states <div id="settings-remembershufflerepeatstates" onclick="switchCellSetting(this, 'rememberShuffleRepeatStates')" class="switchcell"><div></div></div></h4>
                     </div>
                 </div>

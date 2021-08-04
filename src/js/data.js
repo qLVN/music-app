@@ -1,11 +1,16 @@
 const { time } = require("console");
 const { create } = require("domain");
+const keytar = require('keytar')
 const fs = require("fs");
 
 const dataFolderPath = (electron.app || electron.remote.app).getPath('userData');
 const userPrefsPath = dataFolderPath + "/data/user_prefs.json";
 
 var app_version;
+var isMusickitLoaded = false;
+var domcontentLoaded = false;
+
+var systemColorMode = null;
 
 var playlists;
 var listenNow;
@@ -45,9 +50,12 @@ async function loadAppData() {
             });
             loadPrefs();
             if(userDataContent.isConnected != 1) { //user is not connected
+                document.getElementById('account-connected').style.display = 'none';
                 navBarSelect(); //no need to add args as we aren't connected
             } else {
+                document.getElementById('account-not-connected').style.display = 'none';
                 ipcRenderer.send('thumbar', 0);
+                ipcRenderer.send('getSystemColorMode');
                 ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();');
                 var volumeSlider = document.getElementById('volume');
                 volumeSlider.value = userDataContent.lastVolume;
@@ -130,6 +138,9 @@ function loadPrefs() {
             switchCellSetting(document.getElementById('settings-remembershufflerepeatstates'), 'rememberShuffleRepeatStates', prefs['rememberShuffleRepeatStates'], false);
             listItemCellSetting(document.getElementById('settings-rpcmode'), 'rpcMode', prefs['rpcMode'], false);
             listItemCellSetting(document.getElementById('settings-colormode'), 'colorMode', prefs['colorMode'], false);
+
+            changeAppColorMode(prefs['colorMode']);
+            changeAppPerformanceMode(prefs['performanceMode']);
         } else {
             console.log("File user_prefs.json not found, creating one..");
 
@@ -145,9 +156,24 @@ function loadPrefs() {
     }
 }
 
+function formatCredsDict(creds) {
+    var credsDict = {};
+
+    creds.forEach(dict => {
+        credsDict[dict['account']] = dict['password'];
+    });
+
+    return credsDict;
+}
+
 function sendParams() {
+    var userDataPath = dataFolderPath + "/data/userdata.json";
+    var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
     changeRepeatMode('', userDataContent.lastRepeatMode);
     toggleShuffle('', userDataContent.lastShuffleMode);
+
+    isMusickitLoaded = true;
+    if(domcontentLoaded) loadAppData();
 
     var volumeSlider = document.getElementById('volume');
     ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
@@ -187,7 +213,7 @@ async function selectArtist(line) {
 
     Object.keys(artistInfo).forEach(function(key) {
         var artworkWrapper = document.createElement('div');
-        artworkWrapper.innerHTML = '<i class="fas fa-play left"></i><i class="fas fa-ellipsis-h right"></i>';
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + artistInfo[key]['id'] + '\', \'' + artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
         var artworkImg = document.createElement('img');
         artworkImg.src = artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '220').replace('{h}', '220').replace('{f}', 'jpg');
@@ -206,6 +232,8 @@ async function selectArtist(line) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    if(isMusickitLoaded) loadAppData();
+    domcontentLoaded = true;
     loadAppData();
 });
 
@@ -244,6 +272,15 @@ function switchCellSetting(switchCell, setting, value, save) {
 
     if(save === undefined || save) {
         setPrefForValue(setting, value);
+
+        switch(setting) {
+            case 'performanceMode':
+                changeAppPerformanceMode(value);
+                break;
+            default:
+                console.log('No setting live setter triggered, Music might need to be restarted');
+                break;
+        }
     }
 }
 
@@ -254,6 +291,18 @@ function listItemCellSetting(settingCell, setting, value, save) { //settingCell 
 
         if(save === undefined || save) {
             setPrefForValue(setting, value);
+
+            switch(setting) {
+                case 'colorMode':
+                    if(value == 'system') {
+                        //... set value = dark or light
+                    }
+                    changeAppColorMode(value);
+                    break;
+                default:
+                    console.log('No setting live setter triggered, Music might need to be restarted');
+                    break;
+            }
         }
     });
 }
@@ -263,6 +312,7 @@ function setPrefForValue(pref, value) {
     var userPrefs = userPrefsContent.preferences;
     userPrefs[pref] = value;
     fs.writeFileSync(userPrefsPath, JSON.stringify(userPrefsContent, null, 4));
+    prefs[pref] = value;
 }
 
 var lastRecentlyAddedScrollHeight = 0;
@@ -354,10 +404,13 @@ function insertListenNow() {
                 break;
             case 'MusicCoverShelf':
                 Object.keys(listenNow[key]['relationships']['contents']['data']).forEach(function(item) {
-                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] == undefined) return;
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['attributes'] == undefined) return;
 
                     var itemWrapper = document.createElement('div');
                     itemWrapper.className = 'item-wrapper';
+
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes'] == undefined) return;
+
                     itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
                     var artworkImg = document.createElement('img');
@@ -387,23 +440,28 @@ function insertListenNow() {
 
 function saveListenNow() {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/recommendations?timezone=%2B02%3A00&with=friendsMix%2Clibrary&name=listen-now&art%5Burl%5D=c%2Cf&omit%5Bresource%5D=autos&relate%5Beditorial-items%5D=contents&extend=editorialCard%2CeditorialVideo&extend%5Balbums%5D=artistUrl&extend%5Bplaylists%5D=artistNames%2CeditorialArtwork&extend%5Bsocial-profiles%5D=topGenreNames&include%5Balbums%5D=artists&include%5Bsongs%5D=artists&include%5Bmusic-videos%5D=artists&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2CeditorialVideo%2Cname%2CplayParams%2CreleaseDate%2Curl&fields%5Bartists%5D=name%2Curl&extend%5Bstations%5D=airDate%2CsupportsAirTimeUpdates&meta%5Bstations%5D=inflectionPoints&types=artists%2Calbums%2Ceditorial-items%2Clibrary-albums%2Clibrary-playlists%2Cmusic-movies%2Cmusic-videos%2Cplaylists%2Cstations%2Cuploaded-audios%2Cuploaded-videos%2Cactivities%2Capple-curators%2Ccurators%2Ctv-shows&relate=catalog&l=en-gb&platform=web";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/me/recommendations?timezone=%2B02%3A00&with=friendsMix%2Clibrary&name=listen-now&art%5Burl%5D=c%2Cf&omit%5Bresource%5D=autos&relate%5Beditorial-items%5D=contents&extend=editorialCard%2CeditorialVideo&extend%5Balbums%5D=artistUrl&extend%5Bplaylists%5D=artistNames%2CeditorialArtwork&extend%5Bsocial-profiles%5D=topGenreNames&include%5Balbums%5D=artists&include%5Bsongs%5D=artists&include%5Bmusic-videos%5D=artists&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2CeditorialVideo%2Cname%2CplayParams%2CreleaseDate%2Curl&fields%5Bartists%5D=name%2Curl&extend%5Bstations%5D=airDate%2CsupportsAirTimeUpdates&meta%5Bstations%5D=inflectionPoints&types=artists%2Calbums%2Ceditorial-items%2Clibrary-albums%2Clibrary-playlists%2Cmusic-movies%2Cmusic-videos%2Cplaylists%2Cstations%2Cuploaded-audios%2Cuploaded-videos%2Cactivities%2Capple-curators%2Ccurators%2Ctv-shows&relate=catalog&l=en-gb&platform=web";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI1NzgxODY3LCJleHAiOjE2NDEzMzM4Njd9.yWOQkHcO59ydmtgIzP9TDB_Oasd_u-VNSzP-WJ1Fo_GUlICKq_LU9or5ABFx3EAF9geYHvBkIXvuCbVApN12sg");
-        xhr.setRequestHeader("cache-control", "no-cache");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("cache-control", "no-cache");
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
@@ -411,7 +469,7 @@ function insertRecentlyAdded() {
     Object.keys(recentlyAdded).forEach(function(key) {
         var artworkWrapper = document.createElement('div');
         if(recentlyAdded[key]['attributes']['artwork'] === undefined) return;
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + recentlyAdded[key]['id'] + '\', \'' + recentlyAdded[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right" onclick="showContextMenu(\'media\', \'' + recentlyAdded[key]['id'] + '\', this, false)"></i>';
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + recentlyAdded[key]['id'] + '\', \'' + recentlyAdded[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right" onclick="showContextMenu(\'media\', \'' + recentlyAdded[key]['id'] + '\', this, false, \'recently-added\')"></i>';
         artworkWrapper.setAttribute('album_id', recentlyAdded[key]['id']);
 
         var artworkImg = document.createElement('img');
@@ -443,23 +501,28 @@ function insertRecentlyAdded() {
 
 function saveRecentlyAdded(offset) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/recently-added?l=en-gb&offset=" + offset + "&platform=web&include[library-albums]=artists&include[library-artists]=catalog&fields[artists]=url&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&includeOnly=catalog%2Cartists&limit=25";
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjIyMjUxNTA1LCJleHAiOjE2Mzc4MDM1MDV9.qaZGFoe0pn7-8K0MDbAp2c35nEtrQKz_v4UN2BF4jR7NR2vGKHTzurwsk-rZZUvVjtdqSj5Pli5AKzGn5_OLbQ");
-        xhr.setRequestHeader("cache-control", "no-cache");
-        xhr.setRequestHeader("media-user-token", "Al9QKe6fCBtHDb5dJIDiyw6dlFd4L+HRIGdOZpc8vuZBR6ZLxO0OxcVbxX84rX6ACmLAlakfdgDjL97iOUI3EHhnN5TUKT3J5VvPdIUAkrmQApKk+N3lE8Ulc910UfaIR9mSrsrMhqcsloewO5nYV2KutfCejBaOaNggo43wUyHffyd1T87LuQD0k8merVJkOGhfXdBv65kHZwiXw+lbE1s/jNXJGvIoemr6kj1rxSAv7juC+A==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var url = "https://amp-api.music.apple.com/v1/me/library/recently-added?l=en-gb&offset=" + offset + "&platform=web&include[library-albums]=artists&include[library-artists]=catalog&fields[artists]=url&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&includeOnly=catalog%2Cartists&limit=25";
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-            recentlyAddedOffset = recentlyAddedOffset + 40;
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("cache-control", "no-cache");
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+                recentlyAddedOffset = recentlyAddedOffset + 25;
+            }};
+
+            xhr.send();
+        });
     });
 }
 
@@ -500,23 +563,28 @@ function insertAlbums() {
 
 function saveAlbums(offset) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/albums?l=en-gb&platform=web&limit=100&offset=" + offset + "&include[library-albums]=artists&include[library-artists]=catalog&include[albums]=artists&fields[artists]=name%2Curl&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&includeOnly=catalog%2Cartists";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/me/library/albums?l=en-gb&platform=web&limit=100&offset=" + offset + "&include[library-albums]=artists&include[library-artists]=catalog&include[albums]=artists&fields[artists]=name%2Curl&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&includeOnly=catalog%2Cartists";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjIyMjUxNTA1LCJleHAiOjE2Mzc4MDM1MDV9.qaZGFoe0pn7-8K0MDbAp2c35nEtrQKz_v4UN2BF4jR7NR2vGKHTzurwsk-rZZUvVjtdqSj5Pli5AKzGn5_OLbQ");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-            albumsOffset = albumsOffset + 100;
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+                albumsOffset = albumsOffset + 100;
+            }};
+
+            xhr.send();
+        });
     });
 }
 
@@ -564,45 +632,54 @@ function insertArtists() {
 
 function saveArtists(offset) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/artists?l=en-gb&platform=web&include=catalog&limit=100&offset=" + offset;
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/me/library/artists?l=en-gb&platform=web&include=catalog&limit=100&offset=" + offset;
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjIyMjUxNTA1LCJleHAiOjE2Mzc4MDM1MDV9.qaZGFoe0pn7-8K0MDbAp2c35nEtrQKz_v4UN2BF4jR7NR2vGKHTzurwsk-rZZUvVjtdqSj5Pli5AKzGn5_OLbQ");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-            artistsOffset = artistsOffset + 100;
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+                artistsOffset = artistsOffset + 100;
+            }};
+
+            xhr.send();
+        });
     });
 }
 
 function getAlbumsForArtist(id) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/artists/" + id + "/albums?l=en-gb&platform=web&include[library-albums]=artists%2Ctracks&include[library-artists]=catalog&fields[artists]=url&includeOnly=catalog%2Cartists";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/me/library/artists/" + id + "/albums?l=en-gb&platform=web&include[library-albums]=artists%2Ctracks&include[library-artists]=catalog&fields[artists]=url&includeOnly=catalog%2Cartists";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjIyMjUxNTA1LCJleHAiOjE2Mzc4MDM1MDV9.qaZGFoe0pn7-8K0MDbAp2c35nEtrQKz_v4UN2BF4jR7NR2vGKHTzurwsk-rZZUvVjtdqSj5Pli5AKzGn5_OLbQ");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+            }};
 
+            xhr.send();
+        });
     });
 }
 
@@ -653,43 +730,53 @@ function insertSongs() {
 
 function saveSongs(offset) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/songs?limit=100&offset=" + offset + "&l=en-gb&platform=web";
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjIyMjUxNTA1LCJleHAiOjE2Mzc4MDM1MDV9.qaZGFoe0pn7-8K0MDbAp2c35nEtrQKz_v4UN2BF4jR7NR2vGKHTzurwsk-rZZUvVjtdqSj5Pli5AKzGn5_OLbQ");
-        xhr.setRequestHeader("media-user-token", "Al9QKe6fCBtHDb5dJIDiyw6dlFd4L+HRIGdOZpc8vuZBR6ZLxO0OxcVbxX84rX6ACmLAlakfdgDjL97iOUI3EHhnN5TUKT3J5VvPdIUAkrmQApKk+N3lE8Ulc910UfaIR9mSrsrMhqcsloewO5nYV2KutfCejBaOaNggo43wUyHffyd1T87LuQD0k8merVJkOGhfXdBv65kHZwiXw+lbE1s/jNXJGvIoemr6kj1rxSAv7juC+A==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var url = "https://amp-api.music.apple.com/v1/me/library/songs?limit=100&offset=" + offset + "&l=en-gb&platform=web";
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-            songsOffset = songsOffset + 100;
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+                songsOffset = songsOffset + 100;
+            }};
+
+            xhr.send();
+        });
     });
 }
 
 function savePlaylists() {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/playlist-folders/p.playlistsroot/children?l=en-gb&platform=web&fields=name%2CcanDelete%2CcanEdit";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjIyMjUxNTA1LCJleHAiOjE2Mzc4MDM1MDV9.qaZGFoe0pn7-8K0MDbAp2c35nEtrQKz_v4UN2BF4jR7NR2vGKHTzurwsk-rZZUvVjtdqSj5Pli5AKzGn5_OLbQ");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
-        
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data']);
-        }};
-        
-        xhr.send();
+            var url = "https://amp-api.music.apple.com/v1/me/library/playlist-folders/p.playlistsroot/children?l=en-gb&platform=web&fields=name%2CcanDelete%2CcanEdit";
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
+            
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data']);
+            }};
+            
+            xhr.send();
+        });
     });
 }
 
@@ -882,6 +969,41 @@ function deleteSongFromLibrary(id) { //offline id: i.uhgGhyGFy
 
         xhr.send();
     });
+}
+
+function removeItemFromLibrary(id, type) { //offline id: i.uhgGhyGFy
+    return new Promise(resolve => {
+        var url = "https://amp-api.music.apple.com/v1/me/library/" + type + "/" + id;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", url);
+
+        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI2OTg0ODk4LCJleHAiOjE2NDI1MzY4OTh9.Ftw-IRCBuL9EWw7N8yqsnvsmZc5DI_aqG7ic0eZXOfZMAB7lrVij7HGihIo6Jf9C3ZHw5RfZsd2ZDdYn_ncD9A");
+        xhr.setRequestHeader("media-user-token", "AmifiDxfj6jga9ItOxFDhtOaliLx6VaMWVnEErN57yBio3mNZSH7aXl2cLb4YqhHYVtizblTkvDBX07LUSbRLhX2p+SbM1acD25vQY8SRtPL5uhYnRUXnzTsiEzwtLj3ep2ydgsBnfl3CzbdXVHs774wZ5JwGAT7HWQcBRgXdL0tRyEzclos8LiO93xS1tPhhola2+RqnrQOmrkkYf2jDizGvIyeJB2TavxjCoDJRfkGRAcgNg==");
+        xhr.setRequestHeader("accept", "*/*");
+        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+
+        xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            resolve(xhr.status);
+        }};
+
+        xhr.send();
+    });
+}
+
+async function prepareRemoveItemFromLibrary(id, type, pane) {
+    var result = await removeItemFromLibrary(id, type);
+
+    if(result == 204) {
+        switch(pane) {
+            case 'recently-added':
+                document.querySelectorAll('[contexted]').forEach(function(contextedElement) {
+                    contextedElement.parentNode.remove();
+                });
+                break;
+        }
+    }
 }
 
 function isInLibrary(id, type) { //online id

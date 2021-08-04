@@ -7,7 +7,8 @@
     "discord-rich-presence": "0.0.8",
     "discord-rpc": "^4.0.1",
     "discord.js": "^12.5.3",
-    "electron-acrylic-window": "^0.5.6"
+    "electron-acrylic-window": "^0.5.6",
+    "keytar": "^7.7.0"
   },
   "devDependencies": {
     "electron": "https://github.com/castlabs/electron-releases#v11.4.9-wvvmp",

@@ -1,3 +1,5 @@
+console.log('appleMusicListeners.js loaded.')
+
 var playbackTime = 0;
 
 MusicKit.getInstance().addEventListener(MusicKit.Events.playbackStateDidChange, function() {
@@ -20,6 +22,6 @@ MusicKit.getInstance().addEventListener(MusicKit.Events.queueItemsDidChange, fun
     window.ipcRenderer.send('updateQueueItems', JSON.stringify(MusicKit.getInstance().queue['_queueItems']));
 });
 
-MusicKit.getInstance().addEventListener(MusicKit.Events.loaded, function() {
+document.addEventListener('musickitloaded', function() {
     window.ipcRenderer.send('getParams');
-})
+});

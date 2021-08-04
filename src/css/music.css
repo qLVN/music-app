@@ -164,6 +164,10 @@
     --mainAccent:  #fa233b;
     --mainAccentInvert: #00f3ff;
     --hoverColor: ghostwhite;
+    --black1: black;
+    --white1: white;
+    --white2: #f1f1f1;
+    --white3: #fbfbfb;
 }
 
 html, body {
@@ -206,7 +210,7 @@ body {
     width: 100%;
     height: 60px;
     position: fixed;
-    background-color: white;
+    background-color: var(--white1);
     z-index: 999;
     top: 0px;
     left: 0px;
@@ -233,6 +237,10 @@ body {
     transition: 0.2s ease opacity, background-color, filter;
 }
 
+.toolbar .control-wrapper img:active {
+    filter: brightness(0.8);
+}
+
 .toolbar .control-wrapper img:hover {
     opacity: 0.6;
     background-color: lightgray;
@@ -250,7 +258,7 @@ body {
     position: absolute;
     top: 7px;
     left: 35%;
-    background-color: #f1f1f1;
+    background-color: var(--white2);
     border-radius: 9px;
     border: 3px solid transparent;
     -webkit-app-region: no-drag;
@@ -459,7 +467,7 @@ body {
 
 .toolbar .volume-wrapper input::-webkit-slider-thumb {
     appearance: none;
-    background: white;
+    background: var(--white1);
     border: 1px solid #c4c4c4;
     height: 13px;
     width: 13px;
@@ -470,6 +478,10 @@ body {
 .toolbar .volume-wrapper input::-webkit-slider-thumb:hover {
     background: rgb(255 106 122);
     border-color: rgb(255 106 122);
+}
+
+.toolbar .volume-wrapper input::-webkit-slider-thumb:active {
+    filter: brightness(0.8);
 }
 
 .toolbar .volume-wrapper input::-webkit-slider-thumb:focus {
@@ -532,6 +544,10 @@ body {
     transition: 0.2s ease background-color;
 }
 
+.library-wrapper div:active {
+    background-color: rgba(128, 128, 128, 0.15) !important;
+}
+
 .library-wrapper div img {
     position: relative;
     top: -1px;
@@ -590,9 +606,13 @@ body {
     bottom: 0px;
     width: 270px;
     height: 110px;
-    border-top: 1px solid #f3f3f373;
+    border-top: 1px solid #86868673;
     border-radius: 0px;
     cursor: default;
+    background-color: #ececec70 !important;
+}
+
+.library-wrapper .bottom:active {
     background-color: #ececec70 !important;
 }
 
@@ -608,7 +628,7 @@ body {
     position: absolute;
     bottom: 0px;
     right: 0px;
-    background-color: white;
+    background-color: var(--white1);
 }
 
 .content-wrapper .c-item {
@@ -743,7 +763,7 @@ body {
 .content-wrapper #c-listen-now .part-wrapper .item-wrapper i {
     opacity: 0;
     position: absolute;
-    top: calc(100% - 105px);
+    top: calc(100% - 110px);
     font-size: 20px;
     background-color: #8a8a8aab;
     backdrop-filter: blur(6px);
@@ -843,7 +863,7 @@ body {
     padding: 10px 0px;
     width: 240px;
     background-color: var(--mainAccent);
-    color: white;
+    color: var(--white1);
     font-weight: bold;
     cursor: pointer;
     border-radius: 10px;
@@ -854,10 +874,74 @@ body {
     background-color: #b6172a;
 }
 
+.content-wrapper #c-account #account-connected .left {
+    position: absolute;
+    left: 0px;
+    width: 40%;
+    max-width: 500px;
+    height: 100%;
+}
+
+.content-wrapper #c-account #account-connected .left img {
+    width: 250px;
+    position: absolute;
+    top: calc(50% - 125px);
+    left: calc(50% - 100px);
+}
+
+.content-wrapper #c-account #account-connected .right {
+    position: absolute;
+    right: 0px;
+    width: calc(60% - 50px);
+    padding-right: 50px;
+    top: calc(50% - 160px);
+}
+
+.content-wrapper #c-account #account-connected .right h1 {
+    font-size: 20pt;
+    margin-bottom: 10pt;
+}
+
+.content-wrapper #c-account #account-connected .right .separator {
+    width: 100%;
+    height: 1px;
+    background-color: #d0d0d0;
+}
+
+.content-wrapper #c-account #account-connected .right h3 {
+    font-size: 13pt;
+    margin-bottom: 5px;
+}
+
+.content-wrapper #c-account #account-connected .right span {
+    margin-bottom: 25px;
+    display: block;
+    color: #0000008f;
+}
+
+.content-wrapper #c-account #account-connected .right a {
+    color: var(--mainAccent);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.content-wrapper #c-account #account-connected .right a:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-account #account-connected .right a:active {
+    filter: brightness(0.6);
+}
+
+.content-wrapper #c-account #account-connected .right a img {
+    height: 11px;
+    margin-left: 2px;
+}
+
 .content-wrapper #c-account #loading-account {
     display: none;
     opacity: 0;
-    background-color: white;
+    background-color: var(--white1);
     position: absolute;
     width: 100%;
     height: 100%;
@@ -894,8 +978,8 @@ body {
     max-width: 200px;
     min-width: 100px;
     cursor: pointer;
-    margin: 20px 1.5%;
-    margin-bottom: 0px;
+    margin: 20px 1%;
+    margin-bottom: 0.5%;
     position: relative;
 }
 
@@ -911,6 +995,10 @@ body {
     filter: brightness(0.8);
 }
 
+.content-wrapper #c-recently-added div:active img {
+    filter: brightness(0.6);
+}
+
 .content-wrapper #c-recently-added div i {
     opacity: 0;
     position: absolute;
@@ -918,7 +1006,7 @@ body {
     font-size: 20px;
     background-color: #8a8a8aab;
     backdrop-filter: blur(6px);
-    color: white;
+    color: #f1f1f1;
     border-radius: 100%;
     z-index: 1;
     cursor: pointer;
@@ -1025,6 +1113,10 @@ body {
     filter: brightness(0.8);
 }
 
+.content-wrapper #c-albums div:active img {
+    filter: brightness(0.6);
+}
+
 .content-wrapper #c-albums div i {
     opacity: 0;
     position: absolute;
@@ -1123,7 +1215,7 @@ body {
 }
 
 .content-wrapper #c-artists #artist-loading-item {
-    background-color: white;
+    background-color: var(--white1);
     position: absolute;
     width: 100%;
     height: 100%;
@@ -1160,7 +1252,7 @@ body {
     width: 100%;
     height: 1px;
     margin: 10px 0px 25px 0px;
-    background-color: #f1f1f1;
+    background-color: var(--white2);
 }
 
 .content-wrapper #c-artists #artist-tab #artist-albums div {
@@ -1203,6 +1295,10 @@ body {
     filter: brightness(0.8);
 }
 
+.content-wrapper #c-artists #artist-tab #artist-albums div:active img {
+    filter: brightness(0.6);
+}
+
 .content-wrapper #c-artists #artist-tab #artist-albums div i {
     opacity: 0;
     position: absolute;
@@ -1210,7 +1306,7 @@ body {
     font-size: 20px;
     background-color: #8a8a8aab;
     backdrop-filter: blur(6px);
-    color: white;
+    color: var(--white1);
     border-radius: 100%;
     z-index: 1;
     cursor: pointer;
@@ -1332,7 +1428,7 @@ body {
 .content-wrapper #c-songs tr .name i {
     opacity: 0;
     position: absolute;
-    color: white;
+    color: var(--white1);
     top: 14px;
     left: 64px;
     cursor: pointer;
@@ -1423,10 +1519,14 @@ body {
 .content-wrapper #c-settings .content h4 .switchcell div {
     width: 100%;
     height: 15px;
-    background-color: white;
+    background-color: var(--white1);
     border-radius: 50px;
     box-shadow: 0px 0px 15px -1px rgb(0 0 0 / 25%);
-    transition: 0.5s cubic-bezier(0.4, 0.01, 0.57, 1) margin-left, width;
+    transition: 0.5s cubic-bezier(0.4, 0.01, 0.57, 1) margin-left;
+}
+
+.content-wrapper #c-settings .content h4 .switchcell:active div {
+    filter: brightness(0.95);
 }
 
 .content-wrapper #c-settings .content h4 .switchcell.on {
@@ -1474,7 +1574,7 @@ body {
 }
 
 .content-wrapper #c-settings .content h4 .listitemcell div.selected {
-    background-color: white;
+    background-color: var(--white1);
     box-shadow: 0px 0px 15px -1px rgb(0 0 0 / 16%);
 }
 
@@ -1493,6 +1593,10 @@ body {
     cursor: pointer;
 }
 
+.content-wrapper #c-settings a:active {
+    filter: brightness(0.6);
+}
+
 .content-wrapper #c-settings a:hover {
     text-decoration: underline;
 }
@@ -1502,13 +1606,17 @@ body {
     border: none;
     padding: 5px 10px;
     background-color: var(--mainAccent);
-    color: white;
+    color: var(--white1);
     font-weight: 600;
     font-family: 'SFProDisplay';
     border-radius: 5px;
     cursor: pointer;
     margin-right: 10px;
     margin-bottom: 10px;
+}
+
+.content-wrapper #c-settings button:active {
+    filter: brightness(0.6);
 }
 
 .content-wrapper #c-album #album-header {
@@ -1613,7 +1721,7 @@ body {
 
 .content-wrapper #c-album #album-header i {
     color: var(--mainAccent);
-    background-color: #fbfbfb;
+    background-color: var(--white3);
     padding: 6px;
     border-radius: 100%;
     position: absolute;
@@ -1640,7 +1748,7 @@ body {
 }
 
 .content-wrapper #c-album #album-song-list li:nth-child(even) {
-    background-color: #fbfbfb;
+    background-color: var(--white3);
 }
 
 .content-wrapper #c-album #album-song-list li img {
@@ -1655,7 +1763,7 @@ body {
 }
 
 .content-wrapper #c-album #album-song-list li:hover {
-    background-color: #f1f1f1;
+    background-color: var(--white2);
 }
 
 .content-wrapper #c-album #album-song-list li:hover img {
@@ -1825,7 +1933,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 }
 
 .content-wrapper #c-artist #c-artist-loading-item {
-    background-color: white;
+    background-color: var(--white1);
     position: absolute;
     width: 100%;
     height: 100%;
@@ -1900,7 +2008,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 }
 
 .content-wrapper #c-artist #artist-content {
-    background-color: white;
+    background-color: var(--white1);
 }
 
 .content-wrapper #c-artist .content-avatarmode {
@@ -2208,6 +2316,10 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     filter: brightness(0.8);
 }
 
+.content-wrapper #c-search #album-results-container div:active img {
+    filter: brightness(0.6);
+}
+
 .content-wrapper #c-search #album-results-container div i {
     opacity: 0;
     position: absolute;
@@ -2215,7 +2327,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     font-size: 20px;
     background-color: #8a8a8aab;
     backdrop-filter: blur(6px);
-    color: white;
+    color: white; 
     border-radius: 100%;
     z-index: 1;
     cursor: pointer;
@@ -2244,7 +2356,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 }
 
 .content-wrapper #loading-item {
-    background-color: white;
+    background-color: var(--white1);
     position: absolute;
     width: 100%;
     height: 100%;
@@ -2425,7 +2537,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 }
 
 #search-window .search-type-wrapper .selected {
-    background-color: white;
+    background-color: var(--white1);
     box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
 }
 
@@ -2468,7 +2580,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 
 #search-window #suggestion-list li span span {
     position: unset;
-    color: black;
+    color: var(--black1);
 }
 
 #search-window #suggestion-list div {
@@ -2495,7 +2607,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
     width: 50px;
     height: 50px;
-    background-color: white;
+    background-color: var(--white1);
 }
 
 #search-window #suggestion-list div h4 {
@@ -2565,7 +2677,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 }
 
 .part-loading-item {
-    background-color: white !important;
+    background-color: var(--white1) !important;
     position: absolute !important;
     padding: unset !important;
     margin: unset !important;

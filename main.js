@@ -1,5 +1,6 @@
 const { app, ipcMain, globalShortcut } = require('electron')
 const { BrowserWindow } = require('electron-acrylic-window');
+const { nativeTheme } = require('electron/main');
 const fs = require("fs");
 const path = require('path')
 
@@ -102,13 +103,12 @@ function invisibleWindow() {
   win2.loadURL("https://music.apple.com/library/recently-added");
 
   win2.once('ready-to-show', () => {
-      win2.hide();
-      win2.webContents.insertCSS('.web-navigation__header { -webkit-user-select: none; -webkit-app-region: drag; } .loading-inner { display: none !important; } .dt-footer { display: none !important; } .menuicon { display: none !important; } .page-container { background-color: #dadada !important; height: 100%; }');
-      const js = fs.readFileSync(path.join(__dirname, './appleMusicListeners.js')).toString();
-      setTimeout(function() {
-        win2.webContents.executeJavaScript(js);
-      }, 2000);
-     
+    win2.hide();
+    win2.webContents.insertCSS('.web-navigation__header { -webkit-user-select: none; -webkit-app-region: drag; } .loading-inner { display: none !important; } .dt-footer { display: none !important; } .menuicon { display: none !important; } .page-container { background-color: #dadada !important; height: 100%; } .locale-switcher-banner { display: none !important; } .cwc-upsell-personal { display: none !important; } .cwc-upsell-banner { display: none !important; }');
+    const js = fs.readFileSync(path.join(__dirname, './appleMusicListeners.js')).toString();
+    setTimeout(function() {
+      win2.webContents.executeJavaScript(js);
+    }, 2000);
   })
 
   win2.onbeforeunload = (e) => {
@@ -175,8 +175,29 @@ function invisibleWindow() {
     }
   })
 
+  ipcMain.on('getSystemColorMode', (event) => {
+    if(nativeTheme.shouldUseDarkColors) win.webContents.executeJavaScript('systemColorMode = "dark";');
+    else win.webContents.executeJavaScript('systemColorMode = "light";');
+  });
+
+  nativeTheme.on('updated', () => {
+    if(nativeTheme.shouldUseDarkColors) win.webContents.executeJavaScript('systemColorMode = "dark";');
+    else win.webContents.executeJavaScript('systemColorMode = "light";');
+    win.webContents.executeJavaScript('changeAppColorMode("system");');
+  });
+
   ipcMain.on('MusicJS', (event, data) => {
     win2.webContents.executeJavaScript(data);
+  });
+
+  ipcMain.on('showAppleLoginWindow', (event, data) => {
+      win2.webContents.executeJavaScript('var signInMusic = document.createElement("a"); signInMusic.href = "/login"; signInMusic.id = "signin-music"; document.body.appendChild(signInMusic); document.getElementById("signin-music").click();');
+      win2.webContents.insertCSS('.loading-inner { display: block !important } #web-main { margin-top: 0 !important; } .web-navigation__auth-button--sign-in { display: none !important } .branding-container { overflow-y: hidden !important } .idms-login__create-link[data-v-62b83b1e], .idms-login__forgot-link[data-v-62b83b1e] { display: none !important; }');
+      win2.show();
+      // const js = fs.readFileSync(path.join(__dirname, './appleMusicListeners.js')).toString();
+      // setTimeout(function() {
+      //   win2.webContents.executeJavaScript(js);
+      // }, 2000);
   });
 
   ipcMain.on('thumbar', (event, data) => {
