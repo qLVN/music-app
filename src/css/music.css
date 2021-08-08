@@ -1306,7 +1306,7 @@ body {
     font-size: 20px;
     background-color: #8a8a8aab;
     backdrop-filter: blur(6px);
-    color: var(--white1);
+    color: white;
     border-radius: 100%;
     z-index: 1;
     cursor: pointer;
@@ -1428,7 +1428,7 @@ body {
 .content-wrapper #c-songs tr .name i {
     opacity: 0;
     position: absolute;
-    color: var(--white1);
+    color: white;
     top: 14px;
     left: 64px;
     cursor: pointer;
