@@ -56,11 +56,16 @@ async function loadAppData() {
                 document.getElementById('account-not-connected').style.display = 'none';
                 ipcRenderer.send('thumbar', 0);
                 ipcRenderer.send('getSystemColorMode');
-                ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();');
+                ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();'); //if CTRL+R
                 var volumeSlider = document.getElementById('volume');
                 volumeSlider.value = userDataContent.lastVolume;
                 var value = (volumeSlider.value-volumeSlider.min)/(volumeSlider.max-volumeSlider.min)*100;
-                volumeSlider.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+                
+                if(prefs['colorMode'] == 'dark') { //dark
+                    volumeSlider.style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
+                } else { //light
+                    volumeSlider.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+                }
                 ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
                 navBarSelect(userDataContent.lastOpenedNavbarItem);
                 document.getElementById('listen-now-loading-item').style.display = 'block';
@@ -74,7 +79,10 @@ async function loadAppData() {
                 Object.keys(playlists).forEach(function(key) {
                     playlistNumber++;
                     var playlistDiv = document.createElement('div');
+                    playlistDiv.className = 'nb-item';
                     playlistDiv.innerHTML = '<img src="assets/sidebar_GenericPlaylist.svg" draggable="false" /><span>' + playlists[key]['attributes']['name'] + '</span>';
+                    playlistDiv.setAttribute('onclick', 'navBarSelect("playlist", true, this)');
+                    playlistDiv.setAttribute('playlist_id', playlists[key]['id']);
                     if(playlistNumber == 1) playlistDiv.style.marginTop = '15px';
                     document.getElementById('playlists-wrapper').appendChild(playlistDiv);
                 });
@@ -116,8 +124,8 @@ async function loadAppData() {
 }
 
 function loadPrefs() {
-    if (fs.existsSync(dataFolderPath + "/data/")) {
-        if (fs.existsSync(userPrefsPath)) {
+    if(fs.existsSync(dataFolderPath + "/data/")) {
+        if(fs.existsSync(userPrefsPath)) {
             var userPrefsContent = JSON.parse(fs.readFileSync(userPrefsPath, 'utf-8').toString());
             var userPrefs = userPrefsContent.preferences;
             Object.keys(prefs).forEach(function(key) {
@@ -411,11 +419,14 @@ function insertListenNow() {
 
                     if(listenNow[key]['relationships']['contents']['data'][item]['attributes'] == undefined) return;
 
-                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
+                    var artworkURL = 'assets/loadingArtwork.png';
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] !== undefined) artworkURL = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'];
+                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
                     var artworkImg = document.createElement('img');
                     artworkImg.setAttribute('draggable', 'false');
-                    artworkImg.src = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png').replace('{c}', '');
+                    if(artworkURL == 'assets/loadingArtwork.png') artworkURL = 'assets/noArtwork.png';
+                    artworkImg.src = artworkURL.replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png').replace('{c}', '');
                     var titleSpan = document.createElement('span');
                     titleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['name'];
 
@@ -540,10 +551,13 @@ async function scrollingAlbums() {
 function insertAlbums() {
     Object.keys(albums).forEach(function(key) {
         var artworkWrapper = document.createElement('div');
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + albums[key]['id'] + '\', \'' + albums[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
+        var artworkURL = 'assets/loadingArtwork.png';
+        if(albums[key]['attributes']['artwork'] !== undefined) artworkURL = albums[key]['attributes']['artwork']['url'];
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + albums[key]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50').replace('{f}', 'jpg') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
         var artworkImg = document.createElement('img');
-        artworkImg.src = albums[key]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'jpg');
+        if(artworkURL == 'assets/loadingArtwork.png') artworkURL = 'assets/noArtwork.png';
+        artworkImg.src = artworkURL.replace('{w}', '200').replace('{h}', '200').replace('{f}', 'jpg');
         artworkImg.setAttribute('draggable', 'false');
         artworkImg.setAttribute('onclick', 'presentAlbum("' + albums[key]['id'] + '")')
         artworkWrapper.appendChild(artworkImg);
@@ -698,13 +712,15 @@ function insertSongs() {
     Object.keys(songs).forEach(function(key) {
         var tableTr = document.createElement('tr');
         tableTr.className= 'song-line';
-        tableTr.setAttribute('song_id', songs[key]['id']);
+        tableTr.setAttribute('media_type', 'songs');
+        tableTr.setAttribute('media_id', songs[key]['id']); //offline id
         tableTr.setAttribute('song_duration', Math.round(songs[key]['attributes']['durationInMillis'] / 1000));
         tableTr.setAttribute('onclick', 'selectSong(this)');
+        tableTr.setAttribute('parent', '');
 
         var nameTh = document.createElement('th');
         nameTh.className = 'name';
-        nameTh.innerHTML = '<i class="fas fa-ellipsis-h"></i><i class="fas fa-play"></i><img src="' + songs[key]['attributes']['artwork']['url'].replace('{w}', '36').replace('{h}', '36').replace('{f}', 'jpg') + '" onclick="playSong(\'' + songs[key]['id'] + '\', \'' + songs[key]['attributes']['name'].replaceAll("'", "\\'") + '\', \'' + songs[key]['attributes']['artwork']['url'].replace('{w}', '46').replace('{h}', '46') + '\', \'' + songs[key]['attributes']['artistName'].replaceAll("'", "\\'") + '\', \'' + songs[key]['attributes']['albumName'].replaceAll("'", "\\'") + '\', \'' + Math.round(songs[key]['attributes']['durationInMillis'] / 1000) + '\')" /><span>' + songs[key]['attributes']['name'] + '</span>';
+        nameTh.innerHTML = '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><i class="fas fa-play"></i><img src="' + songs[key]['attributes']['artwork']['url'].replace('{w}', '36').replace('{h}', '36').replace('{f}', 'jpg') + '" onclick="playSong(\'' + songs[key]['id'] + '\', \'' + songs[key]['attributes']['name'].replaceAll("'", "\\'") + '\', \'' + songs[key]['attributes']['artwork']['url'].replace('{w}', '46').replace('{h}', '46') + '\', \'' + songs[key]['attributes']['artistName'].replaceAll("'", "\\'") + '\', \'' + songs[key]['attributes']['albumName'].replaceAll("'", "\\'") + '\', \'' + Math.round(songs[key]['attributes']['durationInMillis'] / 1000) + '\')" /><span>' + songs[key]['attributes']['name'] + '</span>';
         tableTr.appendChild(nameTh);
 
         var artistTh = document.createElement('th');
@@ -1008,7 +1024,7 @@ async function prepareRemoveItemFromLibrary(id, type, pane) {
 
 function isInLibrary(id, type) { //online id
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/catalog/fr?l=en-gb&platform=web&omit%5Bresource%5D=autos&fields=inLibrary&relate=library&ids%5B" + type + "%5D=" + id;
+        var url = "https://amp-api.music.apple.com/v1/catalog/fr?l=en-gb&platform=web&omit%5Bresource%5D=autos&fields=inLibrary&relate=library&ids[" + type + "]=" + id;
 
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url);
@@ -1047,4 +1063,43 @@ function getAlbumIdForOnlineSong(id) { //online id
         
         xhr.send();        
     });
+}
+
+function getOfflinePlaylistData(id) { //offline id
+    return new Promise(resolve => {
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
+
+            var url = "https://amp-api.music.apple.com/v1/me/library/playlists/" + id + "?include=tracks&l=en-gb&platform=web&include%5Blibrary-playlists%5D=catalog%2Ctracks&fields%5Bplaylists%5D=curatorName%2CplaylistType%2Cname%2Cartwork%2Curl&include%5Blibrary-songs%5D=catalog&fields%5Bsongs%5D=artistUrl";
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
+            
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data'][0]);
+            }};
+            
+            xhr.send();
+        });
+    });
+}
+
+function checkDictPathExists(dict, pathArray) { //returns true if no errors
+    var error = null;
+    pathArray.forEach(path => {
+        if(dict[path] !== undefined) {
+            dict = dict[path];
+        } else {
+            error = true;
+        }
+    });
+    if(error === null) return true;
+    else return false;
 }

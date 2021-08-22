@@ -24,6 +24,10 @@ html, body {
     background: #484848;
 }
 
+::-webkit-scrollbar-thumb:active {
+    background: #3a3a3a;
+}
+
 .toolbar {
     box-shadow: rgb(0 0 0 / 20%) 0px 0px 17px;
 }
@@ -32,7 +36,7 @@ html, body {
     filter: invert(1) !important;
 }
 
-.toolbar .music-wrapper {
+.toolbar .music-wrapper img {
     filter: invert(1);
 }
 
@@ -148,6 +152,10 @@ html, body {
     box-shadow: rgb(15 16 16 / 20%) 0px 8px 24px;
 }
 
+.content-wrapper #c-search #song-results #song-results-container li {
+    border-top: 1px solid #494949;
+}
+
 .content-wrapper #c-settings .separator {
     background-color: #4c4c4c;
 }
@@ -206,6 +214,10 @@ html, body {
     box-shadow: rgb(26 26 29 / 55%) 0px 7px 29px 0px;
 }
 
+.content-wrapper #c-playlist #playlist-header img {
+    box-shadow: rgb(26 26 29 / 55%) 0px 7px 29px 0px;
+}
+
 .content-wrapper #c-artist {
     background: linear-gradient(0deg, #2d2d2d, #383838);
 }
@@ -225,4 +237,8 @@ html, body {
 
 .content-wrapper #c-songs tr:nth-child(even) {
     background-color: #3a3a3a;
+}
+
+.content-wrapper #c-albums div img {
+    box-shadow: rgb(0 0 0 / 20%) 0px 7px 29px 0px;
 }

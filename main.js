@@ -176,14 +176,14 @@ function invisibleWindow() {
   })
 
   ipcMain.on('getSystemColorMode', (event) => {
-    if(nativeTheme.shouldUseDarkColors) win.webContents.executeJavaScript('systemColorMode = "dark";');
+    if(nativeTheme.shouldUseDarkColors) win.webContents.executeJavaScript('systemColorMode = "dark"; if(prefs["colorMode"] == "system") changeAppColorMode("dark");');
     else win.webContents.executeJavaScript('systemColorMode = "light";');
   });
 
   nativeTheme.on('updated', () => {
     if(nativeTheme.shouldUseDarkColors) win.webContents.executeJavaScript('systemColorMode = "dark";');
     else win.webContents.executeJavaScript('systemColorMode = "light";');
-    win.webContents.executeJavaScript('changeAppColorMode("system");');
+    win.webContents.executeJavaScript('if(prefs["colorMode"] == "system") changeAppColorMode("system");');
   });
 
   ipcMain.on('MusicJS', (event, data) => {

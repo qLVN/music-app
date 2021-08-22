@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     $(window).click(function() {
-        document.getElementById('context-menu').style.display = 'none';
+        document.getElementById('context-menu').style.pointerEvents = 'none';
         document.getElementById('context-menu').style.opacity = 0;
     });
 
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 selectedNavbar = null;
 
-function navBarSelect(id, isExtra) {
+function navBarSelect(id, isExtra, playlistButton) {
     if(isExtra != true) isExtra = false;
 
     selectedNavbar = id;
@@ -226,9 +226,9 @@ function navBarSelect(id, isExtra) {
             userDataContent.lastOpenedNavbarItem = id;
             fs.writeFileSync(userDataPath, JSON.stringify(userDataContent, null, 4),'utf-8');
         } 
-        $('.nb-item').each(function() {
-            document.getElementById($(this).attr('id')).style.backgroundColor = 'transparent';
-            document.getElementById($(this).attr('id')).style.boxShadow = 'none';
+        document.querySelectorAll('.nb-item').forEach(function(item) {
+            item.style.backgroundColor = 'transparent';
+            item.style.boxShadow = 'none';
         });
         if(!isExtra) {
             if(prefs['colorMode'] == 'dark' || prefs['colorMode'] == 'system' && systemColorMode == 'dark') {
@@ -238,6 +238,16 @@ function navBarSelect(id, isExtra) {
                 document.getElementById('nb-' + id).style.backgroundColor = '#e2e2e2';
                 document.getElementById('nb-' + id).style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
             }
+        } else if(id == 'playlist') {
+            if(prefs['colorMode'] == 'dark' || prefs['colorMode'] == 'system' && systemColorMode == 'dark') {
+                playlistButton.style.backgroundColor = 'rgb(86 86 86)';
+                playlistButton.style.boxShadow = 'rgb(23 24 25 / 20%) 0px 8px 24px';
+            } else {
+                playlistButton.style.backgroundColor = '#e2e2e2';
+                playlistButton.style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
+            }
+
+            presentPlaylist(playlistButton.getAttribute('playlist_id'));
         }
         $('.c-item').each(function() {
             document.getElementById($(this).attr('id')).style.display = 'none';
@@ -259,6 +269,32 @@ jQuery(window).on('resize', function() {
         }
     });
 });
+
+async function presentPlaylist(id) {
+    document.getElementById('playlist-loading-item').style.display = 'block';
+    document.getElementById('playlist-show-artwork').src = 'assets/noArtwork.png';
+    document.getElementById('playlist-show-curator').innerHTML = '';
+    document.getElementById('playlist-show-description').innerHTML = '';
+
+    var playlistData = await getOfflinePlaylistData(id);
+    
+    if(playlistData['attributes']['artwork'] !== undefined) {
+        document.getElementById('playlist-show-artwork').src = playlistData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270').replace('{f}', 'png');
+    }
+    //else -> create & set custom artwork
+
+    document.getElementById('playlist-show-title').innerHTML = playlistData['attributes']['name'];
+
+    if(checkDictPathExists(playlistData, ['relationships', 'catalog', 'data', 0, 'attributes', 'curatorName'])) {
+        document.getElementById('playlist-show-curator').innerHTML = playlistData['relationships']['catalog']['data'][0]['attributes']['curatorName'];
+    } 
+
+    if(checkDictPathExists(playlistData, ['attributes', 'description', 'standard'])) {
+        document.getElementById('playlist-show-description').innerHTML = playlistData['attributes']['description']['standard'];
+    }
+
+    document.getElementById('playlist-loading-item').style.display = 'none';
+}
 
 function displayHeaderSong(name, artwork, artist, album, onlyTitle) {
     var playerInfo = document.getElementById('player-info');
@@ -469,6 +505,10 @@ async function presentSearchResult(text) {
     document.getElementById('artist-results-container').innerHTML = '';
     document.getElementById('album-results').style.display = 'none';
     document.getElementById('album-results-container').innerHTML = '';
+    document.getElementById('song-results').style.display = 'none';
+    document.getElementById('song-results-container').innerHTML = '';
+
+    document.getElementById('search-results-title').innerHTML = 'Loading search results...';
 
     var searchData = await getSearchData(text);
 
@@ -484,6 +524,9 @@ async function presentSearchResult(text) {
 
             var topDiv = document.createElement('div');
             topDiv.setAttribute('align', 'left');
+            topDiv.setAttribute('media_type', searchData['top']['data'][top]['type']);
+            topDiv.setAttribute('media_id', searchData['top']['data'][top]['id']);
+            topDiv.setAttribute('parent', 'nodelete');
 
             var topClickWrapper = document.createElement('div');
             topClickWrapper.className = 'click-wrapper';
@@ -498,6 +541,7 @@ async function presentSearchResult(text) {
 
             var topMore = document.createElement('i');
             topMore.className = 'fas fa-ellipsis-h';
+            topMore.setAttribute('onclick', 'modernContextMenu(this)')
 
             var topSub = document.createElement('span');
 
@@ -554,6 +598,10 @@ async function presentSearchResult(text) {
                     if(albumId.includes('?')) albumId = albumId.split('?')[0];
                     topClickWrapper.setAttribute('onclick', 'presentOnlineAlbum("' + albumId + '")');
                     break;
+                case 'apple-curators':
+                    topArtwork.className = 'artwork artist';
+                    topSub.innerHTML = 'Curator';
+                    break
                 default:
                     return;
             }
@@ -579,6 +627,7 @@ async function presentSearchResult(text) {
             var artworkImg = document.createElement('img');
             artworkImg.src = searchData['artist']['data'][artist]['attributes']['artwork']['url'].replace('{w}', '140').replace('{h}', '140').replace('{f}', 'png');
             artworkImg.setAttribute('onclick', 'presentArtist("' + searchData['artist']['data'][artist]['id'] + '")');
+            artworkImg.setAttribute('draggable', 'false');
 
             var artistSpan = document.createElement('span');
             artistSpan.innerHTML = searchData['artist']['data'][artist]['attributes']['name'];
@@ -598,10 +647,14 @@ async function presentSearchResult(text) {
             if(albumCounter >= 11) return;
 
             var avatarWrapper = document.createElement('div');
-            avatarWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + searchData['album']['data'][album]['id'] + '\', \'' + searchData['album']['data'][album]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
+            avatarWrapper.setAttribute('parent', 'nodelete');
+            avatarWrapper.setAttribute('media_type', 'albums');
+            avatarWrapper.setAttribute('media_id', searchData['album']['data'][album]['id']);
+            avatarWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + searchData['album']['data'][album]['id'] + '\', \'' + searchData['album']['data'][album]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
 
             var artworkImg = document.createElement('img');
             artworkImg.src = searchData['album']['data'][album]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png');
+            artworkImg.setAttribute('draggable', 'false');
             artworkImg.setAttribute('onclick', 'presentOnlineAlbum("' + searchData['album']['data'][album]['id'] + '")');
 
             var nameSpan = document.createElement('span');
@@ -620,12 +673,59 @@ async function presentSearchResult(text) {
             document.getElementById('album-results-container').appendChild(avatarWrapper);
         });
     }
+    if(searchData['song'] !== undefined) {
+        document.getElementById('song-results').style.display = 'block';
+
+        Object.keys(searchData['song']['data']).forEach(async function(song) {
+            var songLi = document.createElement('li');
+            songLi.setAttribute('parent', 'nodelete');
+            songLi.setAttribute('media_type', 'songs');
+            songLi.setAttribute('media_id', searchData['song']['data'][song]['id']);
+            var artworkImg = document.createElement('img');
+            artworkImg.setAttribute('draggable', 'false');
+            artworkImg.className = 'artwork';
+            artworkImg.src = searchData['song']['data'][song]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png').replace('{c}', '');
+            artworkImg.setAttribute('onclick', 'playSong("' + searchData['song']['data'][song]['id'] + '", "' + searchData['song']['data'][song]['attributes']['name'] + '", "' + artworkImg.src + '", "' + searchData['song']['data'][song]['attributes']['artistName'] + '", "' + searchData['song']['data'][song]['attributes']['artistName'] + '", ' + Math.round(searchData['song']['data'][song]['attributes']['durationInMillis']/1000) + ')');
+            songLi.appendChild(artworkImg);
+
+            var playImg = document.createElement('img');
+            playImg.className = 'play';
+            playImg.setAttribute('draggable', 'false');
+            playImg.src = 'assets/play.svg';
+            songLi.appendChild(playImg);
+
+            var ellipsisI = document.createElement('i');
+            ellipsisI.className = 'fas fa-ellipsis-h';
+            ellipsisI.setAttribute('onclick', 'modernContextMenu(this)');
+            songLi.appendChild(ellipsisI);
+
+            var addImg = document.createElement('img');
+            addImg.className = 'add';
+            addImg.src = 'assets/add.svg';
+            addImg.setAttribute('draggable', 'false');
+            addImg.setAttribute('onclick', 'queueAddSong("' + searchData['song']['data'][song]['id'] + '", this)');
+            if(await isInLibrary(searchData['song']['data'][song]['id'], 'songs')) addImg.style.display = 'none';
+            songLi.appendChild(addImg);
+
+            var titleText = document.createElement('h4');
+            titleText.innerHTML = searchData['song']['data'][song]['attributes']['name'];
+            songLi.appendChild(titleText);
+
+            var artistText = document.createElement('h5');
+            artistText.innerHTML = searchData['song']['data'][song]['attributes']['artistName'];
+            artistText.setAttribute('onclick', 'presentArtist("' + searchData['song']['data'][song]['relationships']['artists']['data'][0]['id'] + '")');
+            songLi.appendChild(artistText);
+
+            document.getElementById('song-results-container').appendChild(songLi);
+        });
+    }
 }
 
 function queueAddSong(id, addElement) {
     //change addElement to loading
     addSongToLibrary(id);
     addElement.src = 'assets/tick.png';
+    addElement.setAttribute('draggable', 'false');
 }
 
 function toggleSearchWindow() {
@@ -636,6 +736,85 @@ function toggleSearchWindow() {
     } else {
         searchWindow.style.display = 'none';
     }
+}
+
+async function modernContextMenu(element) {
+    var contextMenu = document.getElementById('context-menu');
+    var parent = null;
+
+    var addToLibrary = document.getElementById('context-menu-addlibrary');
+    var removeFromLibrary = document.getElementById('context-menu-removelibrary');
+    var contextMedia = document.getElementById('context-menu-media');
+
+    var playNext = document.getElementById('context-menu-playnext');
+    var playLater = document.getElementById('context-menu-playlater');
+
+    playNext.setAttribute('onclick', '');
+    playLater.setAttribute('onclick', '');
+
+    if(element.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode;
+    } else if(element.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode;
+    } else if(element.parentNode.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode.parentNode;
+    }
+
+    if(parent !== null) {
+        if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators') {
+            if(parent.getAttribute('media_id').includes('.')) { //offline
+                addToLibrary.style.display = 'none';
+                removeFromLibrary.style.display = 'block';
+                contextMedia.style.display = 'block';
+            } else { //online
+                if(await isInLibrary(parent.getAttribute('media_id'), parent.getAttribute('media_type'))) {
+                    addToLibrary.style.display = 'none';
+                    removeFromLibrary.style.display = 'block';
+                    contextMedia.style.display = 'block';
+                } else {
+                    addToLibrary.style.display = 'block';
+                    removeFromLibrary.style.display = 'none';
+                    contextMedia.style.display = 'block';
+                }
+
+                //.slice(0, -1) --> 'songs' -> 'song' etc.
+                playNext.setAttribute('onclick', 'playNextOrLater("Next", "' + parent.getAttribute('media_type').slice(0, -1) + '", "' + parent.getAttribute('media_id') + '")');
+                playLater.setAttribute('onclick', 'playNextOrLater("Later", "' + parent.getAttribute('media_type').slice(0, -1) + '", "' + parent.getAttribute('media_id') + '")');
+            }
+
+        } else {
+            addToLibrary.style.display = 'none';
+            removeFromLibrary.style.display = 'none';
+            contextMedia.style.display = 'none';
+        }
+    } else {
+        addToLibrary.style.display = 'none';
+        removeFromLibrary.style.display = 'none';
+        contextMedia.style.display = 'none';
+    }
+
+    document.querySelectorAll('[contexted]').forEach(function(contextedElement) {
+        contextedElement.removeAttribute('contexted');
+    });
+
+    element.setAttribute('contexted', true);
+
+    if(element.getBoundingClientRect().left > $(window).width() / 2) {
+        contextMenu.style.left = element.getBoundingClientRect().left - 172 + element.getBoundingClientRect().width;
+    } else {
+        contextMenu.style.left = element.getBoundingClientRect().left;
+    }
+
+    if(element.getBoundingClientRect().top > $(window).height() / 2) {
+        contextMenu.style.top = element.getBoundingClientRect().top - 130 + element.getBoundingClientRect().height;
+    } else {
+        contextMenu.style.top = element.getBoundingClientRect().top;
+    }
+
+    setTimeout(function() {
+        contextMenu.style.pointerEvents = 'auto';
+        contextMenu.style.opacity = 1;
+    }, 10);
 }
 
 async function showContextMenu(type, id, element, online, id_type, pane) {
@@ -689,42 +868,41 @@ async function showContextMenu(type, id, element, online, id_type, pane) {
         contextMenu.style.top = element.getBoundingClientRect().top;
     }
 
-    setTimeout(function() { //important
-        contextMenu.style.display = 'block';
-        setTimeout(function() {
-            contextMenu.style.opacity = 1;
-        }, 200);
-    }, 10); //important
+    setTimeout(function() {
+        contextMenu.style.pointerEvents = 'auto';
+        contextMenu.style.opacity = 1;
+    }, 10);
 }
 
-function changeAppColorMode(color) { console.log('ff');
+function changeAppColorMode(color) {
     if(color == 'system') {
         color = systemColorMode;
+        if(systemColorMode === null) return;
     }
 
     var value = (document.getElementById("volume").value-document.getElementById("volume").min)/(document.getElementById("volume").max-document.getElementById("volume").min)*100;
 
     switch(color) {
         case 'light':
-            $('.nb-item').each(function() {
-                if(document.getElementById($(this).attr('id')).style.backgroundColor == 'rgb(86, 86, 86)') {
-                    document.getElementById($(this).attr('id')).style.backgroundColor = 'rgb(226, 226, 226)';
-                    document.getElementById($(this).attr('id')).style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
+            document.querySelectorAll('.nb-item').forEach(function(item) {
+                if(item.style.backgroundColor == 'rgb(86, 86, 86)') {
+                    item.style.backgroundColor = 'rgb(226, 226, 226)';
+                    item.style.boxShadow = 'rgba(149, 157, 165, 0.2) 0px 8px 24px';
                 }
             });
-            document.getElementById("volume").style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
             $('link[href="css/darkmode.css"]').remove();
+            document.getElementById("volume").style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
             break;
         case 'dark':
-            $('.nb-item').each(function() {
-                if(document.getElementById($(this).attr('id')).style.backgroundColor == 'rgb(226, 226, 226)') {
-                    document.getElementById($(this).attr('id')).style.backgroundColor = 'rgb(86, 86, 86)';
-                    document.getElementById($(this).attr('id')).style.boxShadow = 'rgba(23, 24, 25, 0.2) 0px 8px 24px';
+            document.querySelectorAll('.nb-item').forEach(function(item) {
+                if(item.style.backgroundColor == 'rgb(226, 226, 226)') {
+                    item.style.backgroundColor = 'rgb(86, 86, 86)';
+                    item.style.boxShadow = 'rgba(23, 24, 25, 0.2) 0px 8px 24px';
                 }
             });
-            document.getElementById("volume").style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
             $('link[href="css/darkmode.css"]').remove();
             $('head').append('<link rel="stylesheet" href="css/darkmode.css" type="text/css" />');
+            document.getElementById("volume").style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
             break;
     }
 }

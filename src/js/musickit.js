@@ -256,15 +256,20 @@ function setQueueItems(items) {
     document.getElementById('queue-song-list').innerHTML = '';
 
     var i = 0;
+    var index = 0;
+    if(nowPlayingItem !== undefined) index = nowPlayingItem['index'] + 1;
     Object.keys(items).forEach(function(song) {
         i++;
         var songLi = document.createElement('li');
+        if(i <= index) {
+            songLi.style.display = 'none';
+        }
         songLi.className = 'queue-song-line';
         songLi.setAttribute('onclick', 'selectSongInQueue(this)')
 
         min = Math.floor((items[song]['item']['attributes']['durationInMillis']/1000/60) << 0),
         sec = Math.floor((items[song]['item']['attributes']['durationInMillis']/1000) % 60);
-        if (sec < 10) {
+        if(sec < 10) {
             sec = '0' + sec;
         }
         songLi.innerHTML = '<img src="' + items[song]['item']['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '" /><span class="title">' + items[song]['item']['attributes']['name'] + '</span><span class="artist">' + items[song]['item']['attributes']['artistName'] + '</span><span class="time">' + min + ':' + sec + '</span><i class="fas fa-ellipsis-h"></i';
@@ -334,6 +339,23 @@ function setNowPlayingItem(name, artwork, artist, album, duration, index, id) {
            }
         });
     }
+}
+
+function playNextOrLater(nextLater, type, id) { //nextLater is 'Next' || 'Later'
+    ipcRenderer.send("MusicJS", "MusicKit.getInstance().play" + nextLater + "({ " + type + ": '" + id + "' });");
+
+    var index = 0;
+    if(nowPlayingItem !== undefined && nowPlayingItem !== null) index = nowPlayingItem['index'] + 1;
+    var i = 1;
+
+    document.querySelectorAll('.queue-song-line').forEach(function(queueSong) {
+        if(i <= index) {
+            queueSong.style.display = 'none';
+        } else {
+            queueSong.style.display = 'block';
+        }
+        i++;
+    });
 }
 
 function toggleShuffle(button, customValue) {

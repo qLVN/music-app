@@ -278,7 +278,31 @@
                     <h3 class="seeall" id="album-results-seeall">See All</h3>
                     <div id="album-results-container" class="scroller"></div>
                 </div>
+                <div id="song-results">
+                    <h3>Songs</h3>
+                    <h3 class="seeall" id="song-results-seeall">See All</h3>
+                    <div id="song-results-container" class="scroller"></div>
+                </div>
                 <div id="search-loading-item" class="part-loading-item" style="display: none;" align="center">
+                    <img src="assets/loading.gif" />
+                </div>
+            </div>
+            <div class="c-item" id="c-playlist">
+                <div id="playlist-header">
+                    <img id="playlist-show-artwork" />
+                    <div class="text-wrapper">
+                        <h1 id="playlist-show-title"></h1>
+                        <h1 id="playlist-show-curator" class="link"></h1>
+                        <span id="playlist-show-description"></span>
+                    </div>
+                    <div class="play-button" id="playlist-show-play"><img src="assets/play.svg" /> Play</div><div class="shuffle-button" id="playlist-show-shuffle"><img src="assets/shuffle.svg" /> <span>Shuffle</span></div>
+                    <i class="fas fa-ellipsis-h"></i>
+                </div>
+                <div id="playlist-song-list">
+
+                </div>
+                <span class="bottom" id="playlist-counter"></span>
+                <div id="playlist-loading-item" class="part-loading-item" style="display: none;" align="center">
                     <img src="assets/loading.gif" />
                 </div>
             </div>
@@ -288,12 +312,12 @@
         </div>
         <div id="context-menu">
             <li id="context-menu-addlibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Add To Library <img src="assets/add.svg" /></li>
-            <li id="context-menu-removelibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Delete From Library <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
+            <li id="context-menu-removelibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Library <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
             <div id="context-menu-media">
-                <li>Play Next <img src="assets/playNext.svg" /></li>
-                <li>Play Later <img src="assets/playLater.svg" /></li>
-                <li style="border-radius: 0px 0px 5px 5px;">Share <img src="assets/share.svg" /></li>
+                <li id="context-menu-playnext">Play Next <img src="assets/playNext.svg" /></li>
+                <li id="context-menu-playlater">Play Later <img src="assets/playLater.svg" /></li>
             </div>
+            <li style="border-radius: 0px 0px 5px 5px;">Share <img src="assets/share.svg" /></li>
         </div>
         <div id="queue-wrapper">
             <h5 id="queue-upnext" style="display: none;">Up next</h5>
