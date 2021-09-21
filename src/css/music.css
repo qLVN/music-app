@@ -458,6 +458,20 @@ body {
     -webkit-app-region: no-drag;
 }
 
+.toolbar .volume-wrapper img {
+    position: absolute;
+    left: -20px;
+    top: 25px;
+    width: 15px;
+    opacity: 0.4;
+}
+
+@media screen and (max-width: 1000px) {
+    .toolbar .volume-wrapper img {
+        display: none;
+    }
+}
+
 .toolbar .volume-wrapper input {
     background: linear-gradient(to right, #a0a0a0 0%, #a0a0a0 50%, #e0e0e0 50%, #e0e0e0 100%);
     width: 100%;
@@ -514,8 +528,8 @@ body {
 
 .toolbar .music-wrapper .side {
     position: relative;
-    top: -5px;
-    width: 28px;
+    top: -4px;
+    width: 30px;
 }
 
 .toolbar .music-wrapper .selected {
@@ -541,8 +555,8 @@ body {
     padding: 6px 12px 6px 37px;
     background-color: transparent;
     border-radius: 7px;
-    cursor: pointer;
     white-space: nowrap;
+    letter-spacing: 1px;
     color: rgba(0, 0, 0, 0.85);
     position: relative;
     transition: 0.2s ease background-color;
@@ -553,8 +567,6 @@ body {
 }
 
 .library-wrapper div img {
-    position: relative;
-    top: -1px;
     opacity: 0.5;
 }
 
@@ -577,8 +589,9 @@ body {
     font-size: unset;
     color: unset;
     margin-left: 3px;
-    top: -4px;
-    width: 100%;
+    top: -3px;
+    width: calc(100% - 20px);
+    letter-spacing: 1px;
     display: inline-block;
     white-space: nowrap;
     overflow-x: hidden;
@@ -595,8 +608,9 @@ body {
 }
 
 .library-wrapper span {
-    font-weight: 300;
-    font-size: 13px;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
     color: gray;
     margin-left: 35px;
     position: relative;
@@ -769,8 +783,8 @@ body {
     position: absolute;
     top: calc(100% - 110px);
     font-size: 20px;
-    background-color: #8a8a8aab;
-    backdrop-filter: blur(6px);
+    background-color: #8a8a8a5c;
+    backdrop-filter: blur(2px);
     color: white;
     border-radius: 100%;
     z-index: 1;
@@ -1008,8 +1022,8 @@ body {
     position: absolute;
     top: calc(100% - 90px);
     font-size: 20px;
-    background-color: #8a8a8aab;
-    backdrop-filter: blur(6px);
+    background-color: #8a8a8a5c;
+    backdrop-filter: blur(2px);
     color: #f1f1f1;
     border-radius: 100%;
     z-index: 1;
@@ -1126,8 +1140,8 @@ body {
     position: absolute;
     top: calc(100% - 120px);
     font-size: 20px;
-    background-color: #8a8a8aab;
-    backdrop-filter: blur(6px);
+    background-color: #8a8a8a5c;
+    backdrop-filter: blur(2px);
     color: white;
     border-radius: 100%;
     z-index: 1;
@@ -1308,8 +1322,8 @@ body {
     position: absolute;
     top: calc(100% - 105px);
     font-size: 20px;
-    background-color: #8a8a8aab;
-    backdrop-filter: blur(6px);
+    background-color: #8a8a8a5c;
+    backdrop-filter: blur(2px);
     color: white;
     border-radius: 100%;
     z-index: 1;
@@ -1925,6 +1939,27 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
 
 /* end from Apple */
 
+.content-wrapper #c-album #album-show-complete-album {
+    display: inline-block;
+    margin: 0px 0px 45px 30px;
+    font-weight: 500;
+    color: var(--mainAccent);
+    cursor: pointer;
+}
+
+.content-wrapper #c-album #album-show-complete-album.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.content-wrapper #c-album #album-show-complete-album:hover {
+    text-decoration: underline;
+}
+
+.content-wrapper #c-album #album-show-complete-album:active {
+    filter: brightness(0.6);
+}
+
 .content-wrapper #c-album .bottom {
     display: block;
     margin: 2px 30px;
@@ -2344,8 +2379,8 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     position: absolute;
     top: calc(100% - 90px);
     font-size: 20px;
-    background-color: #8a8a8aab;
-    backdrop-filter: blur(6px);
+    background-color: #8a8a8a5c;
+    backdrop-filter: blur(2px);
     color: white; 
     border-radius: 100%;
     z-index: 1;
@@ -2530,17 +2565,11 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     margin-bottom: 2px;
 }
 
-.content-wrapper #c-playlist #playlist-header .text-wrapper .link {
+.content-wrapper #c-playlist #playlist-header .text-wrapper #playlist-show-curator {
     display: inline;
     margin-bottom: 0px;
     color: gray;
     font-weight: 400;
-    cursor: pointer;
-    transition: 0.1s ease text-decoration;
-}
-
-.content-wrapper #c-playlist #playlist-header .text-wrapper .link:hover {
-    text-decoration: underline;
 }
 
 .content-wrapper #c-playlist #playlist-header .text-wrapper span {
@@ -2548,6 +2577,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     font-size: 11pt;
     font-weight: 300;
     letter-spacing: 0.6px;
+    margin-top: 20px;
     opacity: 0.7;
 }
 
@@ -2616,62 +2646,107 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     cursor: pointer;
 }
 
+.content-wrapper #c-playlist .example {
+    margin: 0px 30px 5px 103px;
+    font-weight: 300;
+    font-size: 10pt;
+    position: relative;
+}
+
+.content-wrapper #c-playlist .example span {
+    padding-left: 10px;
+    border-left: 1px solid gray;
+}
+
 .content-wrapper #c-playlist #playlist-song-list {
     margin-bottom: 25px
 }
 
 .content-wrapper #c-playlist #playlist-song-list li {
     list-style: none;
-    height: 45px;
+    height: 60px;
     margin: 5px 30px;
-    padding: 0px 15px 0px 35px;
+    padding-right: 15px;
     border-radius: 7px;
     font-weight: 400;
     font-size: 13px;
     position: relative;
-    line-height: 45px;
+    line-height: 60px;
     transition: 0.1s ease background-color;
 }
 
-.content-wrapper #c-playlist #playlist-song-list li:nth-child(even) {
+.content-wrapper #c-playlist #playlist-song-list li:nth-child(odd) {
     background-color: var(--white3);
-}
-
-.content-wrapper #c-playlist #playlist-song-list li img {
-    opacity: 0;
-    cursor: pointer;
-    width: 22px;
-    position: absolute;
-    left: 10px;
-    top: 12px;
-    filter: invert(31%) sepia(70%) saturate(6238%) hue-rotate(341deg) brightness(98%) contrast(100%);
-    transition: 0.1s ease opacity;
 }
 
 .content-wrapper #c-playlist #playlist-song-list li:hover {
     background-color: var(--white2);
 }
 
-.content-wrapper #c-playlist #playlist-song-list li:hover img {
-    opacity: 1;
+.content-wrapper #c-playlist #playlist-song-list li .artwork {
+    height: 45px;
+    width: 45px;
+    border-radius: 5px;
+    margin: 7px 0px 8px 8px;
     cursor: pointer;
+    filter: brightness(1);
+    transition: 0.2s ease filter;
 }
 
-.content-wrapper #c-playlist #playlist-song-list li .index {
-    opacity: 0.6;
-    position: relative;
-    left: -17px;
-    z-index: 1;
-    cursor: pointer;
+.content-wrapper #c-playlist #playlist-song-list li:hover .artwork {
+    filter: brightness(0.6);
+}
+
+.content-wrapper #c-playlist #playlist-song-list li .play {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 30px;
+    filter: invert(1);
     pointer-events: none;
-    transition: 0.1s ease opacity;
+    opacity: 0;
+    transition: 0.2s ease opacity;
+}
+
+.content-wrapper #c-playlist #playlist-song-list li:hover .play {
+    opacity: 1;
+}
+
+.content-wrapper #c-playlist #playlist-song-list li .title {
+    position: absolute;
+    top: 0px;
+    left: 75px;
+    width: 30%;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-playlist #playlist-song-list li .artist {
+    position: absolute;
+    top: 0px;
+    left: calc(100px + 30%);
+    width: 30%;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.content-wrapper #c-playlist #playlist-song-list li .album {
+    position: absolute;
+    top: 0px;
+    left: calc(125px + 60%);
+    width: calc(40% - 210px);
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 .content-wrapper #c-playlist #playlist-song-list li i {
     color: var(--mainAccent);
     float: right;
     margin-right: 7px;
-    line-height: 45px;
+    line-height: 60px;
     cursor: pointer;
 }
 
@@ -2679,10 +2754,6 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     float: right;
     margin-right: 15px;
     opacity: 0.6;
-}
-
-.content-wrapper #c-playlist #playlist-song-list li:hover .index {
-    opacity: 0 !important;
 }
 
 .content-wrapper #c-playlist #playlist-song-list li:hover .playback-bars__svg {
@@ -2784,7 +2855,7 @@ body.is-focused .content-wrapper #c-playlist #playlist-song-list li .playing .pl
 
 .content-wrapper #c-playlist .bottom {
     display: block;
-    margin: 2px 30px;
+    margin: 2px 30px 30px 30px;
     font-size: 13px;
     opacity: 0.6;
 }
@@ -3179,4 +3250,31 @@ body.is-focused .content-wrapper #c-playlist #playlist-song-list li .playing .pl
     height: 15px;
     position: absolute;
     right: 10px;
+}
+
+#loading-applemusic {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 997;
+    background-color: var(--white1);
+    transition: 0.2s ease-in opacity;
+}
+
+#loading-applemusic img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 30px;
+    height: 30px;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+#loading-applemusic h3 {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    text-align: center;
+    letter-spacing: 1px;
+    font-weight: 500;
 }

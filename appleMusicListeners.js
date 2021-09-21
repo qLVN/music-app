@@ -23,5 +23,5 @@ MusicKit.getInstance().addEventListener(MusicKit.Events.queueItemsDidChange, fun
 });
 
 document.addEventListener('musickitloaded', function() {
-    window.ipcRenderer.send('getParams');
+    window.ipcRenderer.send('startUI');
 });

@@ -7,8 +7,6 @@ const dataFolderPath = (electron.app || electron.remote.app).getPath('userData')
 const userPrefsPath = dataFolderPath + "/data/user_prefs.json";
 
 var app_version;
-var isMusickitLoaded = false;
-var domcontentLoaded = false;
 
 var systemColorMode = null;
 
@@ -56,17 +54,6 @@ async function loadAppData() {
                 document.getElementById('account-not-connected').style.display = 'none';
                 ipcRenderer.send('thumbar', 0);
                 ipcRenderer.send('getSystemColorMode');
-                ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();'); //if CTRL+R
-                var volumeSlider = document.getElementById('volume');
-                volumeSlider.value = userDataContent.lastVolume;
-                var value = (volumeSlider.value-volumeSlider.min)/(volumeSlider.max-volumeSlider.min)*100;
-                
-                if(prefs['colorMode'] == 'dark') { //dark
-                    volumeSlider.style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
-                } else { //light
-                    volumeSlider.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
-                }
-                ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
                 navBarSelect(userDataContent.lastOpenedNavbarItem);
                 document.getElementById('listen-now-loading-item').style.display = 'block';
                 document.getElementById('recently-added-loading-item').style.display = 'block';
@@ -128,6 +115,8 @@ function loadPrefs() {
         if(fs.existsSync(userPrefsPath)) {
             var userPrefsContent = JSON.parse(fs.readFileSync(userPrefsPath, 'utf-8').toString());
             var userPrefs = userPrefsContent.preferences;
+            var userDataPath = dataFolderPath + "/data/userdata.json";
+            var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
             Object.keys(prefs).forEach(function(key) {
                 if(userPrefs[key] === undefined) {
                     userPrefs[key] = prefs[key];
@@ -174,19 +163,6 @@ function formatCredsDict(creds) {
     return credsDict;
 }
 
-function sendParams() {
-    var userDataPath = dataFolderPath + "/data/userdata.json";
-    var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
-    changeRepeatMode('', userDataContent.lastRepeatMode);
-    toggleShuffle('', userDataContent.lastShuffleMode);
-
-    isMusickitLoaded = true;
-    if(domcontentLoaded) loadAppData();
-
-    var volumeSlider = document.getElementById('volume');
-    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
-}
-
 function selectSong(line) {
     document.querySelectorAll('.song-line').forEach(function(element) {
         element.removeAttribute('style');
@@ -221,7 +197,7 @@ async function selectArtist(line) {
 
     Object.keys(artistInfo).forEach(function(key) {
         var artworkWrapper = document.createElement('div');
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + artistInfo[key]['id'] + '\', \'' + artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + artistInfo[key]['id'] + '\', \'' + artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
         var artworkImg = document.createElement('img');
         artworkImg.src = artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '220').replace('{h}', '220').replace('{f}', 'jpg');
@@ -239,9 +215,35 @@ async function selectArtist(line) {
     document.getElementById('artist-loading-item').style.display = 'none';
 }
 
+function MKInstanceLoaded() {
+    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();'); //if CTRL+R
+    var volumeSlider = document.getElementById('volume');
+    var userDataPath = dataFolderPath + "/data/userdata.json";
+    var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
+    volumeSlider.value = userDataContent.lastVolume;
+    var value = (volumeSlider.value-volumeSlider.min)/(volumeSlider.max-volumeSlider.min)*100;
+                
+    if(prefs['colorMode'] == 'dark') { //dark
+        volumeSlider.style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
+    } else { //light
+        volumeSlider.style.background = 'linear-gradient(to right, #a0a0a0 0%, #a0a0a0 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+    }
+    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
+
+    changeRepeatMode('', userDataContent.lastRepeatMode);
+    toggleShuffle('', userDataContent.lastShuffleMode);
+    var volumeSlider = document.getElementById('volume');
+    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
+
+    document.getElementById('loading-applemusic').style.opacity = 0;
+    setTimeout(function() {
+        document.getElementById('loading-applemusic').style.display = 'none';
+    }, 200);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    if(isMusickitLoaded) loadAppData();
-    domcontentLoaded = true;
+    ipcRenderer.send('startMKInstanceWaiter');
+
     loadAppData();
 });
 
@@ -421,7 +423,7 @@ function insertListenNow() {
 
                     var artworkURL = 'assets/loadingArtwork.png';
                     if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] !== undefined) artworkURL = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'];
-                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
+                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
                     var artworkImg = document.createElement('img');
                     artworkImg.setAttribute('draggable', 'false');
@@ -479,9 +481,11 @@ function saveListenNow() {
 function insertRecentlyAdded() {
     Object.keys(recentlyAdded).forEach(function(key) {
         var artworkWrapper = document.createElement('div');
+        artworkWrapper.setAttribute('parent', '');
+        artworkWrapper.setAttribute('media_type', 'albums');
+        artworkWrapper.setAttribute('media_id', recentlyAdded[key]['id']);
         if(recentlyAdded[key]['attributes']['artwork'] === undefined) return;
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + recentlyAdded[key]['id'] + '\', \'' + recentlyAdded[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\')"></i><i class="fas fa-ellipsis-h right" onclick="showContextMenu(\'media\', \'' + recentlyAdded[key]['id'] + '\', this, false, \'recently-added\')"></i>';
-        artworkWrapper.setAttribute('album_id', recentlyAdded[key]['id']);
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + recentlyAdded[key]['id'] + '\', \'' + recentlyAdded[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
 
         var artworkImg = document.createElement('img');
         if(recentlyAdded[key]['attributes']['artwork'] !== undefined) {
@@ -553,7 +557,7 @@ function insertAlbums() {
         var artworkWrapper = document.createElement('div');
         var artworkURL = 'assets/loadingArtwork.png';
         if(albums[key]['attributes']['artwork'] !== undefined) artworkURL = albums[key]['attributes']['artwork']['url'];
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + albums[key]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50').replace('{f}', 'jpg') + '\')"></i><i class="fas fa-ellipsis-h right"></i>';
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + albums[key]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50').replace('{f}', 'jpg') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right"></i>';
 
         var artworkImg = document.createElement('img');
         if(artworkURL == 'assets/loadingArtwork.png') artworkURL = 'assets/noArtwork.png';
@@ -563,7 +567,7 @@ function insertAlbums() {
         artworkWrapper.appendChild(artworkImg);
 
         var artworkText = document.createElement('h5');
-        if(albums[key]['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0] !== undefined) {
+        if(checkDictPathExists(albums, [key, 'relationships', 'artists', 'data', 0, 'relationships', 'catalog', 'data', 0, 'id'])) {
             var id = albums[key]['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0]['id'];
         } else {
             var id = 0;
@@ -859,13 +863,13 @@ function getArtistData(id) { //online id
     });
 }
 
-function selectSongInAlbumShow(line) {
-    document.querySelectorAll('.album-show-song-line').forEach(function(element) {
+function selectSongInCustomShow(customClass, line) {
+    document.querySelectorAll('.' + customClass).forEach(function(element) {
         element.removeAttribute('style');
         element.querySelector('.fa-ellipsis-h').removeAttribute('style');
         element.querySelector('img').removeAttribute('style');
         
-        if(element.querySelector('svg').style.opacity == 1) {
+        if(element.querySelector('svg') !== null && element.querySelector('svg').style.opacity == 1) {
             element.querySelectorAll('.playback-bars__bar').forEach(function(bar) {
                 bar.style.fill = 'var(--mainAccent)';
             });
@@ -901,6 +905,64 @@ function selectSongInQueue(line) {
     line.style.color = 'white';
 
     line.querySelector('.fa-ellipsis-h').style.color = 'white';
+}
+
+function handleCMAddToLibrary() {
+    var parent = null;
+
+    //nasty af
+    var element = document.querySelector('[contexted]');
+    if(element.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode;
+    } else if(element.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode;
+    } else if(element.parentNode.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode.parentNode;
+    }
+
+    if(parent !== null) {
+        if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators' && !parent.getAttribute('media_id').includes('.')) {
+            addItemToLibrary(parent.getAttribute('media_id'), parent.getAttribute('media_type'));
+
+            //TODO: Force reload library OR add it manually
+        }
+        else console.log('Unauthorized handleCMAddToLibrary');
+    }
+    else console.log('No data was found for the opened context menu.');
+}
+
+function handleCMRemoveFromLibrary() {
+    var parent = null;
+
+    //nasty af
+    var element = document.querySelector('[contexted]');
+    if(element.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode;
+    } else if(element.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode;
+    } else if(element.parentNode.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode.parentNode;
+    }
+
+    if(parent !== null) {
+        if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators') {
+            if(parent.getAttribute('media_id').includes('.')) { //offline
+                deleteItemFromLibrary(parent.getAttribute('media_id'), parent.getAttribute('media_type'));
+                if(parent.getAttribute('parent') != 'nodelete') {
+                    parent.remove();
+
+                    if(document.getElementById('c-album').style.display = 'block' && document.getElementById('c-album').getAttribute('item_id') !== null) {
+                        document.getElementById('album-show-complete-album').className = '';
+                        document.getElementById('album-show-complete-album').setAttribute('onclick', 'presentOnlineAlbum("' + document.getElementById('c-album').getAttribute('item_id') + '")');                
+                    }
+                }
+            } else { //online
+                //handle remove from online library if this case exists
+            }
+        }
+        else console.log('Unauthorized handleCMRemoveFromLibrary');
+    }
+    else console.log('No data was found for the opened context menu.');
 }
 
 function getInfoForSearch(text) {
@@ -945,9 +1007,9 @@ function getSearchData(text) {
     });
 }
 
-function addSongToLibrary(id) { // online id: 411564564
+function addItemToLibrary(id, item) { // online id: 411564564
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library?ids[songs]=" + id;
+        var url = "https://amp-api.music.apple.com/v1/me/library?ids[" + item + "]=" + id;
 
         var xhr = new XMLHttpRequest();
         xhr.open("POST", url);
@@ -966,9 +1028,9 @@ function addSongToLibrary(id) { // online id: 411564564
     });
 }
 
-function deleteSongFromLibrary(id) { //offline id: i.uhgGhyGFy
+function deleteItemFromLibrary(id, item) { //offline id: i.uhgGhyGFy
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/songs/" + id;
+        var url = "https://amp-api.music.apple.com/v1/me/library/" + item + "/" + id;
 
         var xhr = new XMLHttpRequest();
         xhr.open("DELETE", url);

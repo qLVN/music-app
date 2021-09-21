@@ -22,6 +22,7 @@
             </div>
             <img src="assets/queue.svg" id="queue-button" onclick="toggleQueue()" style="background-color: transparent;" />
             <div class="volume-wrapper">
+                <img src="assets/volume.svg" />
                 <input type="range" min="0" max="1" step="0.01" role="slider" id="volume" />
             </div>
             <div class="player-wrapper" id="player-wrapper">
@@ -50,6 +51,10 @@
                 <img src="assets/next.svg" class="control-button" onclick="ipcRenderer.send('MusicJS', 'MusicKit.getInstance().skipToNextItem();')"></i>
                 <img src="assets/repeat.svg" class="side" id="repeat-button" onclick="changeRepeatMode(this)" />
             </div>
+        </div>
+        <div id="loading-applemusic">
+            <img src="assets/loading.gif" />
+            <h3>Music is loading, this might not take long.</h3>
         </div>
         <div align="center">
             <div id="search-window" style="display: none;">
@@ -87,7 +92,6 @@
                 <h1>Browse</h1>
             </div>
             <div class="c-item" id="c-recently-added" onscroll="scrollingRecentlyAdded()" align="center">
-                <h1>Recently Added</h1>
                 <div id="recently-added-loading-item" class="part-loading-item" style="display: none;" align="center">
                     <img src="assets/loading.gif" />
                 </div>
@@ -243,7 +247,8 @@
                 </div>
                 <span class="bottom" id="album-releasedate"></span>
                 <span class="bottom" id="album-counter"></span>
-                <span class="bottom" id="album-copyright" style="margin-bottom: 50px;"></span>
+                <span class="bottom" id="album-copyright" style="margin-bottom: 5px;"></span>
+                <h5 id="album-show-complete-album">Show complete album</h5>
                 <div id="album-loading-item" class="part-loading-item" style="display: none;" align="center">
                     <img src="assets/loading.gif" />
                 </div>
@@ -288,7 +293,7 @@
                 </div>
             </div>
             <div class="c-item" id="c-playlist">
-                <div id="playlist-header">
+                <div id="playlist-header" parent>
                     <img id="playlist-show-artwork" />
                     <div class="text-wrapper">
                         <h1 id="playlist-show-title"></h1>
@@ -297,6 +302,12 @@
                     </div>
                     <div class="play-button" id="playlist-show-play"><img src="assets/play.svg" /> Play</div><div class="shuffle-button" id="playlist-show-shuffle"><img src="assets/shuffle.svg" /> <span>Shuffle</span></div>
                     <i class="fas fa-ellipsis-h"></i>
+                </div>
+                <div class="example">
+                    <span>Song</span>
+                    <span style="margin-left: calc(30% + 5px);">Artist</span>
+                    <span style="margin-left: calc(30% + 5px);">Album</span>
+                    <span style="position: absolute; right: 38px;">Time</span>
                 </div>
                 <div id="playlist-song-list">
 
@@ -311,8 +322,9 @@
             </div>
         </div>
         <div id="context-menu">
-            <li id="context-menu-addlibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Add To Library <img src="assets/add.svg" /></li>
-            <li id="context-menu-removelibrary" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Library <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
+            <li id="context-menu-removeplaylist" onclick="handleCMRemoveFromPlaylist()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Playlist <img src="assets/play.svg" /></li>
+            <li id="context-menu-addlibrary" onclick="handleCMAddToLibrary()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Add To Library <img src="assets/add.svg" /></li>
+            <li id="context-menu-removelibrary" onclick="handleCMRemoveFromLibrary()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Library <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
             <div id="context-menu-media">
                 <li id="context-menu-playnext">Play Next <img src="assets/playNext.svg" /></li>
                 <li id="context-menu-playlater">Play Later <img src="assets/playLater.svg" /></li>

@@ -59,15 +59,16 @@ function playOnlineSong(id, artwork) {
     ipcRenderer.send('MusicJS', 'MusicKit.getInstance().setQueue({ song: "' + id + '" }).then(function() { MusicKit.getInstance().play(); });');
 }
 
-function playAlbum(id, artwork) {
+function playItem(id, artwork, item) {
     displayHeaderSong('Loading...', artwork, '', 'assets', "loading");
-    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().setQueue({ album: "' + id + '" }).then(function() { MusicKit.getInstance().play(); });');
+    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().setQueue({ ' + item + ': "' + id + '" }).then(function() { MusicKit.getInstance().play(); });');
 }
 
-function playSongFromAlbum(id, artwork, index) {
+function playSongFromItem(id, artwork, index, item) {
     displayHeaderSong('Loading...', artwork, '', 'assets', "loading");
-    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().setQueue({ album: "' + id + '" }).then(function() { MusicKit.getInstance().changeToMediaAtIndex(' + index + '); });');
+    ipcRenderer.send('MusicJS', 'MusicKit.getInstance().setQueue({ ' + item + ': "' + id + '" }).then(function() { MusicKit.getInstance().changeToMediaAtIndex(' + index + '); });');
 }
+
 
 function playPauseSong() {
     var playPauseButton = document.getElementById('playpause-button');
@@ -245,7 +246,11 @@ function setPlaybackTime(time) {
     var playbackSlider = document.getElementById('playback-progress-slider');
     playbackSlider.value = time;
     var value = (playbackSlider.value-playbackSlider.min)/(playbackSlider.max-playbackSlider.min)*100;
-    playbackSlider.style.background = 'linear-gradient(to right, #797979 0%, #797979 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+    if(prefs['colorMode'] == 'dark') { //dark
+        playbackSlider.style.background = 'linear-gradient(to right, #828282 0%, #828282 ' + value + '%, #666666 ' + value + '%, #666666 100%)';
+    } else { //light
+        playbackSlider.style.background = 'linear-gradient(to right, #797979 0%, #797979 ' + value + '%, #e0e0e0 ' + value + '%, #e0e0e0 100%)';
+    }
 
     if(document.getElementById('player-info').style.display == 'none') document.getElementById('player-info').style.display = 'block';
 }
@@ -265,7 +270,9 @@ function setQueueItems(items) {
             songLi.style.display = 'none';
         }
         songLi.className = 'queue-song-line';
-        songLi.setAttribute('onclick', 'selectSongInQueue(this)')
+        songLi.setAttribute('itemQueueIndex', i - 1);
+        songLi.setAttribute('onclick', 'selectSongInQueue(this)');
+        songLi.setAttribute('ondblclick', 'ipcRenderer.send("MusicJS", "MusicKit.getInstance().changeToMediaAtIndex(' + (i - 1) + ');");');
 
         min = Math.floor((items[song]['item']['attributes']['durationInMillis']/1000/60) << 0),
         sec = Math.floor((items[song]['item']['attributes']['durationInMillis']/1000) % 60);
@@ -298,9 +305,11 @@ var nowPlayingItem;
 function setNowPlayingItem(name, artwork, artist, album, duration, index, id) {
     nowPlayingItem = { name: name, artwork: artwork, artist: artist, album: album, index: index };
 
-    activity.details = '🎵 ' + name;
-    activity.state = '💿 ' + album + ' — ' + artist;
-
+    if(activity !== undefined) {
+        activity.details = '🎵 ' + name;
+        activity.state = '💿 ' + album + ' — ' + artist;
+    }
+    
     var playerInfo = document.getElementById('player-info');
     document.getElementById('player-name').innerText = name;
     document.getElementById('player-sub').innerText = artist + ' — ' + album;
@@ -326,7 +335,7 @@ function setNowPlayingItem(name, artwork, artist, album, duration, index, id) {
 
     if(selectedNavbar == 'album') {
         document.querySelectorAll('.album-show-song-line').forEach(function(element) {
-           if(element.getAttribute('song_id') == id) {
+           if(element.getAttribute('media_id') == id) {
                element.querySelector('svg').style.opacity = 1;
                element.querySelector('svg').classList.add('playing');
                element.querySelector('.index').style.opacity = 0;

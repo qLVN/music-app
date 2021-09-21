@@ -99,7 +99,7 @@ async function searchText(text) {
                 playImg.className = 'play';
                 suggestionDiv.appendChild(playImg);
 
-                suggestionImg.setAttribute('onclick', 'playAlbum("' + searchInfo['suggestions'][suggestion]['id'] + '", "' + searchInfo['suggestions'][suggestion]['content']['attributes']['artwork']['url'].replace('{w}', '40').replace('{h}', '40') + '")');
+                suggestionImg.setAttribute('onclick', 'playItem("' + searchInfo['suggestions'][suggestion]['id'] + '", "' + searchInfo['suggestions'][suggestion]['content']['attributes']['artwork']['url'].replace('{w}', '40').replace('{h}', '40') + '", "album")');
                 break;
             case 'songs':
                 suggestionSub.innerHTML = 'Song · ' + searchInfo['suggestions'][suggestion]['content']['attributes']['artistName'];
@@ -193,6 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
             hideSearchBar();
         }
     }
+    $(document).keydown(function(e) {
+        if (e.keyCode == 70 && e.ctrlKey) {
+            if(document.getElementById('loading-applemusic').style.display == 'none') {
+                useSearchBar();
+            }
+        }
+    });
     $(window).click(function() {
         document.getElementById('context-menu').style.pointerEvents = 'none';
         document.getElementById('context-menu').style.opacity = 0;
@@ -275,6 +282,8 @@ async function presentPlaylist(id) {
     document.getElementById('playlist-show-artwork').src = 'assets/noArtwork.png';
     document.getElementById('playlist-show-curator').innerHTML = '';
     document.getElementById('playlist-show-description').innerHTML = '';
+    document.getElementById('playlist-song-list').innerHTML = '';
+    document.getElementById('playlist-show-play').removeAttribute('onclick');
 
     var playlistData = await getOfflinePlaylistData(id);
     
@@ -285,12 +294,100 @@ async function presentPlaylist(id) {
 
     document.getElementById('playlist-show-title').innerHTML = playlistData['attributes']['name'];
 
+    document.getElementById('playlist-show-play').setAttribute('onclick', 'playItem("' + playlistData['id'] + '", "assets/loadingArtwork.png", "playlist")');
+
     if(checkDictPathExists(playlistData, ['relationships', 'catalog', 'data', 0, 'attributes', 'curatorName'])) {
         document.getElementById('playlist-show-curator').innerHTML = playlistData['relationships']['catalog']['data'][0]['attributes']['curatorName'];
     } 
 
     if(checkDictPathExists(playlistData, ['attributes', 'description', 'standard'])) {
         document.getElementById('playlist-show-description').innerHTML = playlistData['attributes']['description']['standard'];
+    }
+
+    var canEdit = '';
+    if(playlistData['attributes']['canEdit'] == true) canEdit = 'canEdit';
+
+    if(checkDictPathExists(playlistData, ['relationships', 'tracks', 'data'])) {
+        var timeCounter = 0;
+        var songNumber = 0;
+        Object.keys(playlistData['relationships']['tracks']['data']).forEach(function(song) {
+            songNumber++;
+            song = playlistData['relationships']['tracks']['data'][song];
+
+            var songLi = document.createElement('li');
+            songLi.setAttribute('parent', 'nodelete'); //remove from playlist overrides nodelete arg
+            songLi.setAttribute('playlist', canEdit);
+            songLi.setAttribute('media_type', 'songs')
+            songLi.setAttribute('media_id', song['id']);
+            songLi.setAttribute('onclick', 'selectSongInCustomShow("playlist-show-song-line", this)');
+            songLi.setAttribute('ondblclick', 'this.querySelector(\'.artwork\').click()');
+            songLi.className = 'playlist-show-song-line';
+
+            var artworkImg = document.createElement('img'); //here is the play onclick
+            artworkImg.className = 'artwork';
+            if(checkDictPathExists(song, ['attributes', 'artwork', 'url'])) {
+               artworkImg.src = song['attributes']['artwork']['url'].replace('{w}', '45').replace('{h}', '45').replace('{f}', 'png');
+            } else {
+               artworkImg.src = 'assets/noArtwork.png';
+            }
+            artworkImg.setAttribute('onclick', 'playSongFromItem("' + playlistData['id'] + '", "assets/loadingArtwork.png", ' + (songNumber - 1) + ', "playlist")');
+            songLi.appendChild(artworkImg);
+
+            var titleDiv = document.createElement('div');
+            titleDiv.className = 'title';
+            titleDiv.innerHTML = song['attributes']['name'];
+            songLi.appendChild(titleDiv);
+
+            var artistDiv = document.createElement('div');
+            artistDiv.className = 'artist';
+            artistDiv.innerHTML = song['attributes']['artistName'];
+            songLi.appendChild(artistDiv);
+
+            var albumDiv = document.createElement('div');
+            albumDiv.className = 'album';
+            albumDiv.innerHTML = song['attributes']['albumName'];
+            songLi.appendChild(albumDiv);
+
+            var ellipsisI = document.createElement('i');
+            ellipsisI.className = 'fas fa-ellipsis-h';
+            ellipsisI.setAttribute('onclick', 'modernContextMenu(this)');
+            songLi.appendChild(ellipsisI);
+
+            var timeSpan = document.createElement('span');
+            timeSpan.className = 'time';
+            min = Math.floor((song['attributes']['durationInMillis']/1000/60) << 0),
+            sec = Math.floor((song['attributes']['durationInMillis']/1000) % 60);
+            if(sec < 10) {
+                sec = '0' + sec;
+            }
+            timeSpan.innerHTML = min + ':' + sec;
+            songLi.appendChild(timeSpan);
+
+            var playImg = document.createElement('img');
+            playImg.src = 'assets/play.svg';
+            playImg.className = 'play';
+            songLi.appendChild(playImg);
+
+            document.getElementById('playlist-song-list').appendChild(songLi);
+
+            timeCounter = timeCounter + song['attributes']['durationInMillis'];
+        });
+
+        var numberOfTracks = playlistData['relationships']['tracks']['meta']['total'];
+        if(numberOfTracks == 1) var tracks = '1 Song';
+        else var tracks = numberOfTracks + ' Songs'
+
+        var mins = Math.floor((timeCounter / (1000 * 60)) % 60);
+        var hours = Math.floor((timeCounter / (1000 * 60 * 60)) % 24);
+        hours = (hours < 10) ? "0" + hours : hours;
+        mins = (mins < 10) ? "0" + mins : mins;
+        if(mins == 1) mins = '1 Minute';
+        else mins = mins + ' Minutes';
+        if(hours == 1) hours = '1 Hour';
+        else hours = hours + ' Hours';
+        document.getElementById('playlist-counter').innerHTML = tracks + ', ' + hours + ', ' + mins;
+    } else {
+        document.getElementById('playlist-counter').innerHTML = '0 Songs, 0 Minutes'
     }
 
     document.getElementById('playlist-loading-item').style.display = 'none';
@@ -355,6 +452,9 @@ function toggleQueue() {
 }
 
 async function presentAlbum(id) {
+    document.getElementById('c-album').removeAttribute('item_id');
+    document.getElementById('album-show-complete-album').className = 'hidden';
+    document.getElementById('album-show-complete-album').removeAttribute('onclick');
     document.getElementById('album-song-list').innerHTML = '';
     navBarSelect('album', true);
     if(document.getElementById('search-window').style.display == 'block') toggleSearchWindow();
@@ -362,6 +462,7 @@ async function presentAlbum(id) {
     document.getElementById('album-show-artwork').src = 'assets/noArtwork.png';
 
     var albumData = await getAlbumData(id);
+    document.getElementById('c-album').setAttribute('item_id', albumData['relationships']['catalog']['data'][0]['id']);
     document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270');
     document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
     document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
@@ -380,21 +481,24 @@ async function presentAlbum(id) {
 
     document.getElementById('album-loading-item').style.display = 'none';
 
-    document.getElementById('album-show-play').setAttribute('onclick', 'playAlbum("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '")');
+    document.getElementById('album-show-play').setAttribute('onclick', 'playItem("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '", "album")');
 
     var songNumber = 0;
     Object.keys(albumData['relationships']['tracks']['data']).forEach(function(song) {
         songNumber++;
         var songLi = document.createElement('li');
         songLi.className = 'album-show-song-line';
-        songLi.setAttribute('onclick', 'selectSongInAlbumShow(this)');
-        songLi.setAttribute('song_id', albumData['relationships']['tracks']['data'][song]['id'])
+        songLi.setAttribute('onclick', 'selectSongInCustomShow("album-show-song-line", this)');
+        songLi.setAttribute('ondblclick', 'this.querySelector(\'img[src="assets/play.svg"]\').click()');
+        songLi.setAttribute('media_type', 'songs');
+        songLi.setAttribute('media_id', albumData['relationships']['tracks']['data'][song]['id']);
+        songLi.setAttribute('parent', '');
         min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
         sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
         if (sec < 10) {
             sec = '0' + sec;
         }
-        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromItem(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', ' + (songNumber - 1) + ', \'album\')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><span class="time">' + min + ':' + sec + '</span>';
         songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
 
         document.getElementById('album-song-list').appendChild(songLi);
@@ -404,16 +508,25 @@ async function presentAlbum(id) {
             document.getElementById('album-show-shuffle').style.display = 'none';
         }
     });
+
+    if(songNumber < albumData['relationships']['catalog']['data'][0]['attributes']['trackCount']) {
+        document.getElementById('album-show-complete-album').className = '';
+        document.getElementById('album-show-complete-album').setAttribute('onclick', 'presentOnlineAlbum("' + albumData['relationships']['catalog']['data'][0]['id'] + '")');
+    }
 }
 
 async function presentOnlineAlbum(id) {
+    document.getElementById('c-album').removeAttribute('item_id');
     document.getElementById('album-song-list').innerHTML = '';
+    document.getElementById('album-show-complete-album').className = 'hidden';
+    document.getElementById('album-show-complete-album').removeAttribute('onclick');
     navBarSelect('album', true);
     if(document.getElementById('search-window').style.display == 'block') hideSearchBar();
     document.getElementById('album-loading-item').style.display = 'block';
     document.getElementById('album-show-artwork').src = 'assets/noArtwork.png';
 
     var albumData = await getOnlineAlbumData(id);
+    document.getElementById('c-album').setAttribute('item_id', albumData['id']);
     document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270').replace('{f}', 'png');
     document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
     document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
@@ -428,21 +541,25 @@ async function presentOnlineAlbum(id) {
 
     document.getElementById('album-loading-item').style.display = 'none';
 
-    document.getElementById('album-show-play').setAttribute('onclick', 'playAlbum("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '")');
+    document.getElementById('album-show-play').setAttribute('onclick', 'playItem("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '", "album")');
 
     var songNumber = 0;
     Object.keys(albumData['relationships']['tracks']['data']).forEach(function(song) {
         songNumber++;
         var songLi = document.createElement('li');
         songLi.className = 'album-show-song-line';
-        songLi.setAttribute('onclick', 'selectSongInAlbumShow(this)');
+        songLi.setAttribute('onclick', 'selectSongInCustomShow("album-show-song-line", this)');
+        songLi.setAttribute('ondblclick', 'this.querySelector(\'img[src="assets/play.svg"]\').click()');
+        songLi.setAttribute('media_type', 'songs');
+        songLi.setAttribute('media_id', albumData['relationships']['tracks']['data'][song]['id']);
+        songLi.setAttribute('parent', 'nodelete');
         min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
         sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
         if (sec < 10) {
             sec = '0' + sec;
         }
 
-        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromAlbum(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="showContextMenu(\'media\', \'' + albumData['relationships']['tracks']['data'][song]['id'] + '\', this, true, \'songs\', \'album\')"></i><span class="time">' + min + ':' + sec + '</span>';
+        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromItem(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ', \'album\')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><span class="time">' + min + ':' + sec + '</span>';
         songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
 
         document.getElementById('album-song-list').appendChild(songLi);
@@ -558,7 +675,7 @@ async function presentSearchResult(text) {
                     playImg.className = 'play';
                     playImg.setAttribute('draggable', 'false');
                     playImg.src = 'assets/play.svg';
-                    topArtwork.setAttribute('onclick', 'playAlbum("' + searchData['top']['data'][top]['id'] + '", "' + searchData['top']['data'][top]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png') + '")')
+                    topArtwork.setAttribute('onclick', 'playItem("' + searchData['top']['data'][top]['id'] + '", "' + searchData['top']['data'][top]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png') + '", "album")')
                     topDiv.appendChild(playImg);
 
                     var addImg = document.createElement('img');
@@ -650,7 +767,7 @@ async function presentSearchResult(text) {
             avatarWrapper.setAttribute('parent', 'nodelete');
             avatarWrapper.setAttribute('media_type', 'albums');
             avatarWrapper.setAttribute('media_id', searchData['album']['data'][album]['id']);
-            avatarWrapper.innerHTML = '<i class="fas fa-play left" onclick="playAlbum(\'' + searchData['album']['data'][album]['id'] + '\', \'' + searchData['album']['data'][album]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
+            avatarWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + searchData['album']['data'][album]['id'] + '\', \'' + searchData['album']['data'][album]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', "album")"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
 
             var artworkImg = document.createElement('img');
             artworkImg.src = searchData['album']['data'][album]['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'png');
@@ -723,7 +840,7 @@ async function presentSearchResult(text) {
 
 function queueAddSong(id, addElement) {
     //change addElement to loading
-    addSongToLibrary(id);
+    addItemToLibrary(id, 'songs');
     addElement.src = 'assets/tick.png';
     addElement.setAttribute('draggable', 'false');
 }
@@ -745,6 +862,7 @@ async function modernContextMenu(element) {
     var addToLibrary = document.getElementById('context-menu-addlibrary');
     var removeFromLibrary = document.getElementById('context-menu-removelibrary');
     var contextMedia = document.getElementById('context-menu-media');
+    var removeFromPlaylist = document.getElementById('context-menu-removeplaylist');
 
     var playNext = document.getElementById('context-menu-playnext');
     var playLater = document.getElementById('context-menu-playlater');
@@ -752,6 +870,7 @@ async function modernContextMenu(element) {
     playNext.setAttribute('onclick', '');
     playLater.setAttribute('onclick', '');
 
+    //nasty af
     if(element.parentNode.getAttribute('parent') !== null) {
         parent = element.parentNode;
     } else if(element.parentNode.parentNode.getAttribute('parent') !== null) {
@@ -766,6 +885,12 @@ async function modernContextMenu(element) {
                 addToLibrary.style.display = 'none';
                 removeFromLibrary.style.display = 'block';
                 contextMedia.style.display = 'block';
+
+                if(parent.getAttribute('playlist') !== null && parent.getAttribute('playlist').includes('canEdit')) { //song is in a playlist
+                    removeFromPlaylist.style.display = 'block';
+                } else {
+                    removeFromPlaylist.style.display = 'none';
+                }
             } else { //online
                 if(await isInLibrary(parent.getAttribute('media_id'), parent.getAttribute('media_type'))) {
                     addToLibrary.style.display = 'none';
@@ -776,6 +901,8 @@ async function modernContextMenu(element) {
                     removeFromLibrary.style.display = 'none';
                     contextMedia.style.display = 'block';
                 }
+
+                removeFromPlaylist.style.display = 'none';
 
                 //.slice(0, -1) --> 'songs' -> 'song' etc.
                 playNext.setAttribute('onclick', 'playNextOrLater("Next", "' + parent.getAttribute('media_type').slice(0, -1) + '", "' + parent.getAttribute('media_id') + '")');
@@ -844,7 +971,7 @@ async function showContextMenu(type, id, element, online, id_type, pane) {
             if(online) {
                 if(await isInLibrary(id, id_type)) {
                     removeFromLibrary.style.display = 'block';
-                    removeFromLibrary.addAttribute('onclick', 'prepareRemoveItemFromLibrary("' + id + '", "' + id_type + '", "' + pane + '")'); //remove from library
+                    //removeFromLibrary.setAttribute('onclick', 'prepareRemoveItemFromLibrary("' + id + '", "' + id_type + '", "' + pane + '")'); //remove from library
                 } else {
                     addToLibrary.style.display = 'block';
                 }

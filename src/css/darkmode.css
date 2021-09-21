@@ -28,6 +28,10 @@ html, body {
     background: #3a3a3a;
 }
 
+img[src="assets/loading.gif"] {
+    filter: invert(1) !important;
+}
+
 .toolbar {
     box-shadow: rgb(0 0 0 / 20%) 0px 0px 17px;
 }
@@ -41,6 +45,14 @@ html, body {
 }
 
 .toolbar .player-wrapper #idle-logo-wrapper img, .toolbar .player-wrapper .search, .toolbar .player-wrapper .cancel {
+    filter: invert(1);
+}
+
+.toolbar .player-wrapper .playback-progress-wrapper #playback-progress {
+    background-color: transparent;
+}
+
+.toolbar .volume-wrapper img {
     filter: invert(1);
 }
 

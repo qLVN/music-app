@@ -208,8 +208,12 @@ function invisibleWindow() {
     }
   });
 
-  ipcMain.on('getParams', (event) => {
-    win.webContents.executeJavaScript('sendParams();');
+  ipcMain.on('startUI', (event) => {
+    win.webContents.executeJavaScript('MKInstanceLoaded();');
+  });
+
+  ipcMain.on('startMKInstanceWaiter', (event) => {
+    win2.webContents.executeJavaScript('function startMKInstanceWaiter() { var interval = setInterval(function() { if(MusicKit.getInstance() !== undefined) { window.ipcRenderer.send(\'startUI\'); clearInterval(interval); }}, 1000); } startMKInstanceWaiter();');
   });
 
   ipcMain.on('updatePlaybackState', (event, data) => {
