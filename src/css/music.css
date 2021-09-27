@@ -175,6 +175,7 @@ html, body {
     margin: 0px;
     font-family: 'SFProDisplay', sans-serif;
     font-weight: normal;
+    letter-spacing: 0.5px;
     cursor: default;
     user-select: none;
     scroll-behavior: smooth;
@@ -304,7 +305,7 @@ body {
 
 .toolbar .player-wrapper .search {
     height: 25px;
-    opacity: 0.8;
+    opacity: 0.6;
     position: absolute;
     right: 6px;
     top: 8px;
@@ -315,7 +316,7 @@ body {
 .toolbar .player-wrapper .cancel {
     display: none;
     height: 25px;
-    opacity: 0.8;
+    opacity: 0.6;
     position: absolute;
     right: 31px;
     top: 8px;
@@ -1655,6 +1656,12 @@ body {
     position: absolute;
     left: 344px;
     top: 103px;
+    transition: 0.3s ease-out;
+}
+
+.content-wrapper #c-album #album-header.toggled-description .text-wrapper {
+    opacity: 0;
+    left: 320px;
 }
 
 .content-wrapper #c-album #album-header .text-wrapper h1 {
@@ -1683,21 +1690,124 @@ body {
     opacity: 0.7;
 }
 
-.content-wrapper #c-album #album-header .play-button {
-    display: inline-block;
-    color: white;
-    background-color: var(--mainAccent);
-    padding: 2px 30px;
-    border-radius: 6px;
-    font-weight: 600;
-    line-height: 26px;
-    cursor: pointer;
-    position: absolute;
-    bottom: 40px;
-    left: 344px;
+.content-wrapper #c-album #album-header .text-wrapper p {
+    display: -webkit-box;
+    font-size: 10pt;
+    font-weight: 300;
+    color: #b5b5b5;
+    min-width: 250px;
+    width: 40%;
+    height: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
 }
 
-.content-wrapper #c-album #album-header .play-button img {
+.content-wrapper #c-album #album-header .text-wrapper #album-show-decription-more {
+    display: none;
+    min-width: 250px;
+    width: 40%;
+    height: 20px;
+    text-align: right;
+    position: absolute;
+    bottom: 10px;
+    opacity: 1;
+    z-index: 1; /* to get above .full-description */
+}
+
+.content-wrapper #c-album #album-header .text-wrapper #album-show-decription-more div {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    width: 60px;
+    height: 20px;
+    background: linear-gradient(90deg, rgba(140,140,140,0) 0%, var(--white1) 30%);
+}
+
+.content-wrapper #c-album #album-header .text-wrapper #album-show-decription-more span {
+    position: absolute;
+    right: 0px;
+    cursor: pointer;
+}
+
+.content-wrapper #c-album #album-header.toggled-description .more {
+    pointer-events: none;
+}
+
+.content-wrapper #c-album #album-header .full-description {
+    opacity: 0;
+    position: absolute;
+    left: 364px;
+    /* left: 344px; */
+    top: 85px;
+    width: calc(40% - 10px);
+    overflow: auto;
+    height: 180px;
+    font-size: 10pt;
+    font-weight: 300;
+    color: #b5b5b5;
+    padding-right: 10px;
+    pointer-events: none;
+    transition: 0.3s ease-out;
+}
+
+.content-wrapper #c-album #album-header.toggled-description .full-description {
+    opacity: 1;
+    left: 344px;
+    pointer-events: all;
+}
+
+.content-wrapper #c-album #album-header .full-description .back {
+    display: inline-block;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.content-wrapper #c-album #album-header.toggled-description .full-description .back {
+    pointer-events: auto !important;
+}
+
+.content-wrapper #c-album #album-header .full-description .back img {
+    width: 10px;
+    transform: rotate(180deg);
+    margin: 0px 6px 0px 0px;
+    position: relative;
+    top: 6px;
+    padding: 5px;
+    background-color: #80808082;
+    border-radius: 20px;
+    filter: invert(1);
+    box-shadow: none;
+}
+
+.content-wrapper #c-album #album-header .media-buttons {
+    position: absolute;
+    left: 345px;
+    top: 280px;
+    height: 30px;
+}
+
+.content-wrapper #c-album #album-header .media-buttons div {
+    color: white;
+    background-color: var(--mainAccent);
+    border-radius: 6px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    line-height: 26px;
+    cursor: pointer;
+    vertical-align: top;
+    height: 26px;
+}
+
+.content-wrapper #c-album #album-header .media-buttons .play-button {
+    display: inline-block;
+    padding: 2px 30px;
+    
+}
+
+.content-wrapper #c-album #album-header .media-buttons .play-button img {
     width: 18px;
     filter: invert(1);
     border-radius: unset;
@@ -1707,37 +1817,27 @@ body {
     box-shadow: none;
 }
 
-.content-wrapper #c-album #album-header .shuffle-button {
+.content-wrapper #c-album #album-header .media-buttons .shuffle-button {
     display: none;
-    color: white;
-    background-color: var(--mainAccent);
-    padding: 2px 17px 2px 6px;
-    border-radius: 6px;
-    font-weight: 600;
-    line-height: 26px;
-    cursor: pointer;
-    position: absolute;
-    height: 26px;
-    bottom: 40px;
-    left: 464px;
+    padding: 2px 17px 2px 9px;
 }
 
-.content-wrapper #c-album #album-header .shuffle-button img {
+.content-wrapper #c-album #album-header .media-buttons .shuffle-button img {
     width: 30px;
     filter: invert(1);
     border-radius: unset;
-    margin: 0px 5px 0px 0px;
+    margin: 0px;
     position: relative;
     top: 2px;
     box-shadow: none;
 }
 
-.content-wrapper #c-album #album-header .shuffle-button span {
+.content-wrapper #c-album #album-header .media-buttons .shuffle-button span {
     position: relative;
-    top: -3px;
+    top: -4px;
 }
 
-.content-wrapper #c-album #album-header i {
+.content-wrapper #c-album #album-header .header-menu {
     color: var(--mainAccent);
     background-color: var(--white3);
     padding: 6px;
@@ -1787,6 +1887,14 @@ body {
 .content-wrapper #c-album #album-song-list li:hover img {
     opacity: 1;
     cursor: pointer;
+}
+
+.content-wrapper #c-album #album-song-list li .popular {
+    left: -23px;
+    top: 11px;
+    filter: unset;
+    opacity: 0.5 !important;
+    pointer-events: none;
 }
 
 .content-wrapper #c-album #album-song-list li .index {
@@ -3022,7 +3130,7 @@ body.is-focused .content-wrapper #c-playlist #playlist-song-list li .playing .pl
 }
 
 #search-window .search-type-wrapper {
-    width: 173px;
+    width: 185px;
     margin-top: 10px;
     background-color: #e6e6e6de;
     border-radius: 10px;

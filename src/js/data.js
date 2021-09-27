@@ -163,58 +163,6 @@ function formatCredsDict(creds) {
     return credsDict;
 }
 
-function selectSong(line) {
-    document.querySelectorAll('.song-line').forEach(function(element) {
-        element.removeAttribute('style');
-        element.querySelector('.fa-ellipsis-h').removeAttribute('style');
-    })
-    line.style.backgroundColor = '#fa233b';
-    line.style.color = 'white';
-
-    line.querySelector('.fa-ellipsis-h').style.color = 'white';
-}
-
-async function selectArtist(line) {
-    if(line.style.color == 'white') return; //already selected
-
-    document.querySelectorAll('.artist-line').forEach(function(element) {
-        element.removeAttribute('style');
-    })
-    line.style.backgroundColor = '#fa233b';
-    line.style.color = 'white';
-
-    document.getElementById('artist-albums').innerHTML = '';
-    document.getElementById('artist-loading-item').style.display = 'block';
-    artistInfo = await getAlbumsForArtist(line.getAttribute('artist_id'));
-
-    document.getElementById('artist-name').innerHTML = line.getAttribute('artist_name') + '<div class="separator"></div>';
-    document.getElementById('artist-avatar').src = line.getAttribute('artist_avatar');
-    if(line.getAttribute('artist_avatar') == '') {
-        document.getElementById('artist-avatar').className = 'no-image';
-    } else {
-        document.getElementById('artist-avatar').className = '';
-    }
-
-    Object.keys(artistInfo).forEach(function(key) {
-        var artworkWrapper = document.createElement('div');
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + artistInfo[key]['id'] + '\', \'' + artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right"></i>';
-
-        var artworkImg = document.createElement('img');
-        artworkImg.src = artistInfo[key]['attributes']['artwork']['url'].replace('{w}', '220').replace('{h}', '220').replace('{f}', 'jpg');
-        artworkImg.setAttribute('draggable', 'false');
-        artworkImg.setAttribute('onclick', 'presentAlbum("' + artistInfo[key]['id'] + '")')
-        artworkWrapper.appendChild(artworkImg);
-
-        var artworkText = document.createElement('h5');
-        artworkText.innerHTML = artistInfo[key]['attributes']['name'] + '<span>' + artistInfo[key]['attributes']['releaseDate'].substring(0,4) + '</span>';
-        artworkWrapper.appendChild(artworkText);
-
-        document.getElementById('artist-albums').appendChild(artworkWrapper);
-    });
-
-    document.getElementById('artist-loading-item').style.display = 'none';
-}
-
 function MKInstanceLoaded() {
     ipcRenderer.send('MusicJS', 'MusicKit.getInstance().stop();'); //if CTRL+R
     var volumeSlider = document.getElementById('volume');

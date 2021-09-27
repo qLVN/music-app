@@ -238,9 +238,15 @@
                         <h1 id="album-show-title"></h1>
                         <h1 id="album-show-artist" class="link"></h1>
                         <span id="album-show-genre-date"></span>
+                        <p id="album-show-description" class="description"></p>
+                        <span id="album-show-decription-more"><div></div><span class="more" onclick="toggleFullDescription('show', this)">MORE</span></span>
                     </div>
-                    <div class="play-button" id="album-show-play"><img src="assets/play.svg" /> Play</div><div class="shuffle-button" id="album-show-shuffle"><img src="assets/shuffle.svg" /> <span>Shuffle</span></div>
-                    <i class="fas fa-ellipsis-h"></i>
+                    <div class="full-description"><div class="back" onclick="toggleFullDescription('hide', this)"><img src="assets/arrow_right.svg" />BACK</div><br /></div>
+                    <div class="media-buttons">
+                        <div class="play-button" id="album-show-play"><img src="assets/play.svg" />Play</div>
+                        <div class="shuffle-button" id="album-show-shuffle"><img src="assets/shuffle.svg" /> <span>Shuffle</span></div>
+                    </div>
+                    <i class="fas fa-ellipsis-h header-menu"></i>
                 </div>
                 <div id="album-song-list">
 
@@ -322,7 +328,7 @@
             </div>
         </div>
         <div id="context-menu">
-            <li id="context-menu-removeplaylist" onclick="handleCMRemoveFromPlaylist()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Playlist <img src="assets/play.svg" /></li>
+            <li id="context-menu-removeplaylist" onclick="handleCMRemoveFromPlaylist()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Playlist <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
             <li id="context-menu-addlibrary" onclick="handleCMAddToLibrary()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Add To Library <img src="assets/add.svg" /></li>
             <li id="context-menu-removelibrary" onclick="handleCMRemoveFromLibrary()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Library <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
             <div id="context-menu-media">

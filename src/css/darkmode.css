@@ -230,6 +230,10 @@ img[src="assets/loading.gif"] {
     box-shadow: rgb(26 26 29 / 55%) 0px 7px 29px 0px;
 }
 
+.content-wrapper #c-album #album-song-list li .popular {
+    filter: invert(1);
+}
+
 .content-wrapper #c-artist {
     background: linear-gradient(0deg, #2d2d2d, #383838);
 }
@@ -248,7 +252,7 @@ img[src="assets/loading.gif"] {
 }
 
 .content-wrapper #c-songs tr:nth-child(even) {
-    background-color: #3a3a3a;
+    background-color: #363636;
 }
 
 .content-wrapper #c-albums div img {
