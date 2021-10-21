@@ -263,6 +263,23 @@
                 <img id="artist-show-parralax" />
                 <img id="artist-show-avatar" />
                 <div id="artist-content">
+                    <div class="upper-panel">
+                        <div id="latest-featured">
+                            <h4 id="lf-title" class="title"></h4>
+                            <img id="lf-artwork" />
+                            <div class="side-info">
+                                <span id="lf-releasedate"></span>
+                                <span id="lf-songtitle"></span>
+                                <span id="lf-counter"></span>
+                                <div id="lf-add"><img src="assets/add.svg" />Add</div>
+                            </div>
+                        </div>
+                        <div id="top-songs">
+                            <h4 class="title">Top Songs</h4>
+                            <h4 class="seeall">See All</h4>
+                            <div id="songs-container"></div>
+                        </div>
+                    </div>
                     <div class="parralax-bottom-wrapper">
                         <img src="assets/play.svg" />
                         <h2 id="artist-show-name"></h2>
@@ -327,6 +344,13 @@
                 <img src="assets/loading.gif" />
             </div>
         </div>
+        <div id="dialog-popup">
+            <div class="window">
+                <h4 id="ap-body"></h4>
+                <div id="ap-btn1"></div>
+                <div id="ap-btn2"></div>
+            </div>
+        </div>
         <div id="context-menu">
             <li id="context-menu-removeplaylist" onclick="handleCMRemoveFromPlaylist()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Remove From Playlist <img src="assets/add.svg" style="transform: rotate(45deg);" /></li>
             <li id="context-menu-addlibrary" onclick="handleCMAddToLibrary()" style="border-top: unset; border-radius: 5px 5px 0px 0px;">Add To Library <img src="assets/add.svg" /></li>
@@ -335,7 +359,7 @@
                 <li id="context-menu-playnext">Play Next <img src="assets/playNext.svg" /></li>
                 <li id="context-menu-playlater">Play Later <img src="assets/playLater.svg" /></li>
             </div>
-            <li style="border-radius: 0px 0px 5px 5px;">Share <img src="assets/share.svg" /></li>
+            <li onclick="presentDialog('This feature is not yet implemented, check back later.', 'OK')" style="border-radius: 0px 0px 5px 5px;">Share <img src="assets/share.svg" /></li>
         </div>
         <div id="queue-wrapper">
             <h5 id="queue-upnext" style="display: none;">Up next</h5>

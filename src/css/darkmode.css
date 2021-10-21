@@ -99,6 +99,10 @@ img[src="assets/loading.gif"] {
     border-left: 1px solid #383838;
 }
 
+#queue-wrapper li img {
+    box-shadow: rgb(0 0 0 / 20%) 0px 8px 24px;
+}
+
 .library-wrapper {
     background-color: #000000b0;
 }
@@ -165,6 +169,14 @@ img[src="assets/loading.gif"] {
 }
 
 .content-wrapper #c-search #song-results #song-results-container li {
+    border-top: 1px solid #494949;
+}
+
+.content-wrapper #c-artist #artist-content .upper-panel #latest-featured .side-info div {
+    background-color: var(--white3);
+}
+
+.content-wrapper #c-artist #artist-content .upper-panel #top-songs #songs-container li {
     border-top: 1px solid #494949;
 }
 

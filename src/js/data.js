@@ -288,7 +288,6 @@ function insertListenNow() {
     Object.keys(listenNow).forEach(function(key) {
         var partWrapper = document.createElement('div');
         partWrapper.className = 'part-wrapper';
-        partWrapper.setAttribute('align', 'center');
         var subHeader = document.createElement('h4');
         if(subHeader.innerHTML = listenNow[key]['attributes']['title'] == undefined) return;
         subHeader.innerHTML = listenNow[key]['attributes']['title']['stringForDisplay'];
@@ -298,7 +297,20 @@ function insertListenNow() {
             case 'MusicNotesHeroShelf':
                 Object.keys(listenNow[key]['relationships']['contents']['data']).forEach(function(item) {
                     var heroWrapper = document.createElement('div');
+                    heroWrapper.setAttribute('parent', 'nodelete');
+                    heroWrapper.setAttribute('media_type', listenNow[key]['relationships']['contents']['data'][item]['type']);
+                    heroWrapper.setAttribute('media_id', listenNow[key]['relationships']['contents']['data'][item]['id']);
+                    heroWrapper.setAttribute('align', 'center');
                     heroWrapper.className = 'hero-wrapper';
+
+                    var artworkURL = 'assets/loadingArtwork.png';
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] !== undefined) artworkURL = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'];
+
+                    if(listenNow[key]['relationships']['contents']['data'][item]['type'] == 'stations') {
+                        heroWrapper.innerHTML = '<i class="fas fa-play center" onclick="playItem(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '100').replace('{h}', '100') + '\', \'station\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
+                    } else {
+                        heroWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50') + '\', \'station\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
+                    }
 
                     var heroTitle = document.createElement('span');
                     if(listenNow[key]['relationships']['contents']['data'][item]['meta'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'] !== undefined) heroTitle.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'];
@@ -337,6 +349,7 @@ function insertListenNow() {
                     if(listenNow[key]['relationships']['contents']['data'][item]['type'] == 'playlists') {
                         if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistNames'] !== undefined) {
                             contentSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistNames'];
+                            //contentSpan.setAttribute('onclick', 'presentArtist(' + listenNow[key]['relationships']['contents']['data'][item]['relationships']['artists']['data'][0]['id'] + ')');
                         } else {
                             if(listenNow[key]['relationships']['contents']['data'][item]['type'] == 'playlists') {
                                 if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['description'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['attributes']['description']['short'] !== undefined) {
@@ -365,13 +378,17 @@ function insertListenNow() {
                     if(listenNow[key]['relationships']['contents']['data'][item]['attributes'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['attributes'] == undefined) return;
 
                     var itemWrapper = document.createElement('div');
+                    itemWrapper.setAttribute('parent', 'nodelete');
+                    itemWrapper.setAttribute('media_type', listenNow[key]['relationships']['contents']['data'][item]['type']);
+                    itemWrapper.setAttribute('media_id', listenNow[key]['relationships']['contents']['data'][item]['id']);
+                    itemWrapper.setAttribute('align', 'center');
                     itemWrapper.className = 'item-wrapper';
 
                     if(listenNow[key]['relationships']['contents']['data'][item]['attributes'] == undefined) return;
 
                     var artworkURL = 'assets/loadingArtwork.png';
                     if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork'] !== undefined) artworkURL = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artwork']['url'];
-                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right"></i>';
+                    itemWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + listenNow[key]['relationships']['contents']['data'][item]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
 
                     var artworkImg = document.createElement('img');
                     artworkImg.setAttribute('draggable', 'false');
@@ -382,7 +399,14 @@ function insertListenNow() {
 
                     var subtitleSpan = document.createElement('span');
                     subtitleSpan.className = 'subtitle';
-                    subtitleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistName'];
+                    if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistName'] !== undefined) {
+                        subtitleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['artistName'];
+                        //subtitleSpan.setAttribute('onclick', 'presentArtist(' + listenNow[key]['relationships']['contents']['data'][item]['relationships']['artists']['data'][0]['id'] + ')');
+                    } else if(listenNow[key]['relationships']['contents']['data'][item]['attributes']['curatorName'] !== undefined) {
+                        subtitleSpan.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['attributes']['curatorName'];
+                    } else {
+                        subtitleSpan.innerHTML = ' '; //to have the margin-bottom (char is ALT+255)
+                    }
 
                     itemWrapper.appendChild(artworkImg);
                     itemWrapper.appendChild(titleSpan);
@@ -482,6 +506,32 @@ function saveRecentlyAdded(offset) {
             if (xhr.readyState === 4) {
                 resolve(JSON.parse(xhr.responseText)['data']);
                 recentlyAddedOffset = recentlyAddedOffset + 25;
+            }};
+
+            xhr.send();
+        });
+    });
+}
+
+function getLastAddedItem() {
+    return new Promise(resolve => {
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
+
+            var url = "https://amp-api.music.apple.com/v1/me/library/recently-added?l=en-gb&platform=web&include%5Blibrary-albums%5D=artists&include%5Blibrary-artists%5D=catalog&fields%5Bartists%5D=url&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&includeOnly=catalog%2Cartists&limit=1";
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
+
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("cache-control", "no-cache");
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data'][0]);
             }};
 
             xhr.send();
@@ -811,50 +861,6 @@ function getArtistData(id) { //online id
     });
 }
 
-function selectSongInCustomShow(customClass, line) {
-    document.querySelectorAll('.' + customClass).forEach(function(element) {
-        element.removeAttribute('style');
-        element.querySelector('.fa-ellipsis-h').removeAttribute('style');
-        element.querySelector('img').removeAttribute('style');
-        
-        if(element.querySelector('svg') !== null && element.querySelector('svg').style.opacity == 1) {
-            element.querySelectorAll('.playback-bars__bar').forEach(function(bar) {
-                bar.style.fill = 'var(--mainAccent)';
-            });
-        } else {
-            element.querySelector('.index').removeAttribute('style');
-        }
-    });
-    line.style.backgroundColor = 'rgb(250, 35, 59)';
-    line.style.color = 'white';
-
-    line.querySelector('.fa-ellipsis-h').style.color = 'white';
-    if(line.querySelector('svg').style.opacity == 1) {
-        line.querySelector('.index').style.opacity = 0;
-    } else {
-        line.querySelector('.index').style.opacity = 1;
-    }
-    
-    line.querySelector('img').style.filter = 'invert(1)';
-    line.querySelectorAll('.playback-bars__bar').forEach(function(element) {
-        element.style.fill = 'white';
-    });
-}
-
-function selectSongInQueue(line) {
-    document.querySelectorAll('.queue-song-line').forEach(function(element) {
-        var setHidden = false;
-        if(element.style.display == 'none') setHidden = true;
-        element.removeAttribute('style');
-        if(setHidden) element.style.display = 'none';
-        element.querySelector('.fa-ellipsis-h').removeAttribute('style');
-    })
-    line.style.backgroundColor = 'rgb(250, 35, 59)';
-    line.style.color = 'white';
-
-    line.querySelector('.fa-ellipsis-h').style.color = 'white';
-}
-
 function handleCMAddToLibrary() {
     var parent = null;
 
@@ -870,9 +876,7 @@ function handleCMAddToLibrary() {
 
     if(parent !== null) {
         if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators' && !parent.getAttribute('media_id').includes('.')) {
-            addItemToLibrary(parent.getAttribute('media_id'), parent.getAttribute('media_type'));
-
-            //TODO: Force reload library OR add it manually
+            addItemToLibrary(parent.getAttribute('media_id'), parent.getAttribute('media_type'));            
         }
         else console.log('Unauthorized handleCMAddToLibrary');
     }
@@ -970,6 +974,52 @@ function addItemToLibrary(id, item) { // online id: 411564564
         xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
             resolve(xhr.status);
+            
+            setTimeout(async function() {
+                var addedItem = await getLastAddedItem();
+
+                var done = false;
+                document.getElementById('c-recently-added').querySelectorAll('div[parent]').forEach(function(item) {
+                    if(item.getAttribute('media_id') == addedItem['id']) {
+                    document.getElementById('c-recently-added').prepend(item);
+                        done = true;
+                    }
+                });
+
+                if(!done) {
+                    var artworkWrapper = document.createElement('div');
+                    artworkWrapper.setAttribute('parent', '');
+                    artworkWrapper.setAttribute('media_type', 'albums');
+                    artworkWrapper.setAttribute('media_id', addedItem['id']);
+                    if(addedItem['attributes']['artwork'] === undefined) return;
+                    artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + addedItem['id'] + '\', \'' + addedItem['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
+            
+                    var artworkImg = document.createElement('img');
+                    if(addedItem['attributes']['artwork'] !== undefined) {
+                        artworkImg.src = addedItem['attributes']['artwork']['url'].replace('{w}', '200').replace('{h}', '200').replace('{f}', 'jpg');
+                    } else {
+                        return;
+                    }
+                    artworkImg.setAttribute('draggable', 'false');
+                    artworkImg.setAttribute('onclick', 'presentAlbum("' + addedItem['id'] + '")');
+                    artworkWrapper.appendChild(artworkImg);
+                
+                    if(addedItem['attributes']['artistName'] === undefined) return;
+                
+                    var artworkText = document.createElement('h5');
+                    artworkText.innerHTML = addedItem['attributes']['name'] + '<span>' + addedItem['attributes']['artistName'] + '</span>';
+                
+                    if(addedItem['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0] !== undefined) {
+                        var id = addedItem['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0]['id'];
+                    } else {
+                        var id = 0;
+                    }
+                    artworkText.setAttribute('onclick', 'presentArtist("' + id + '")');
+                    artworkWrapper.appendChild(artworkText);
+                
+                    document.getElementById('c-recently-added').prepend(artworkWrapper);
+                }
+            }, 5100);
         }};
 
         xhr.send();

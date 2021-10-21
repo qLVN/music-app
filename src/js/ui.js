@@ -609,6 +609,10 @@ async function presentArtist(id) {
     document.getElementById('artist-show-avatar').style.display = 'block';
     document.getElementById('artist-content').className = 'content-avatarmode';
     document.getElementById('artist-show-name').removeAttribute('style');
+    document.getElementById('top-songs').className = '';
+    document.getElementById('songs-container').innerHTML = '';
+    document.getElementById('latest-featured').style.display = 'none';
+    document.getElementById('top-songs').style.display = 'none';
 
     var artistData = await getArtistData(id);
     
@@ -634,6 +638,109 @@ async function presentArtist(id) {
         document.getElementById('artist-content').className = 'content-avatarmode';
         document.getElementById('artist-show-name').removeAttribute('style');
     }
+
+    Object.keys(artistData['meta']['views']['order']).forEach(function(category) {
+        category = artistData['meta']['views']['order'][category];
+        if(Object.keys(artistData['views'][category]['data']).length > 0) {
+            switch(category) {
+                case 'featured-release': //Not tested
+                    document.getElementById('top-songs').className = 'divided';
+                    var latestFeatured = document.getElementById('latest-featured');
+                    document.getElementById('lf-title').innerHTML = 'Featured Release';
+                    if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
+                        document.getElementById('lf-artwork').src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
+                    } else {
+                        document.getElementById('lf-artwork').src = 'assets/noArtwork.png';
+                    }
+
+                    var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
+                    document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
+                    document.getElementById('lf-songtitle').innerHTML = artistData['views'][category]['data'][0]['attributes']['name'];
+                    if(artistData['views'][category]['data'][0]['attributes']['trackCount'] == 1) {
+                        document.getElementById('lf-counter').innerHTML = '1 Song'
+                    } else {
+                        document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
+                    }
+
+                    latestFeatured.style.display = 'inline-block';
+                    break;
+                case 'latest-release':
+                    document.getElementById('top-songs').className = 'divided';
+                    var latestFeatured = document.getElementById('latest-featured');
+                    document.getElementById('lf-title').innerHTML = 'Featured Release';
+                    if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
+                        document.getElementById('lf-artwork').src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
+                    } else {
+                        document.getElementById('lf-artwork').src = 'assets/noArtwork.png';
+                    }
+
+                    var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
+                    document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
+                    document.getElementById('lf-songtitle').innerHTML = artistData['views'][category]['data'][0]['attributes']['name'];
+                    if(artistData['views'][category]['data'][0]['attributes']['trackCount'] == 1) {
+                        document.getElementById('lf-counter').innerHTML = '1 Song'
+                    } else {
+                        document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
+                    }
+
+                    latestFeatured.style.display = 'inline-block';
+                    break;
+                case 'top-songs':
+                    var topSongs = document.getElementById('top-songs');
+
+                    document.getElementById('song-results').style.display = 'block';
+
+                    var i = 0;
+                    Object.keys(artistData['views'][category]['data']).forEach(async function(song) {
+                        i++;
+                        if(i > 12) return;
+                        
+                        var songLi = document.createElement('li');
+                        songLi.setAttribute('parent', 'nodelete');
+                        songLi.setAttribute('media_type', 'songs');
+                        songLi.setAttribute('media_id', artistData['views'][category]['data'][song]['id']);
+                        var artworkImg = document.createElement('img');
+                        artworkImg.setAttribute('draggable', 'false');
+                        artworkImg.className = 'artwork';
+                        artworkImg.src = artistData['views'][category]['data'][song]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png').replace('{c}', '');
+                        artworkImg.setAttribute('onclick', 'playSong("' + artistData['views'][category]['data'][song]['id'] + '", "' + artistData['views'][category]['data'][song]['attributes']['name'] + '", "' + artworkImg.src + '", "' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '", "' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '", ' + Math.round(artistData['views'][category]['data'][song]['attributes']['durationInMillis']/1000) + ')');
+                        songLi.appendChild(artworkImg);
+
+                        var playImg = document.createElement('img');
+                        playImg.className = 'play';
+                        playImg.setAttribute('draggable', 'false');
+                        playImg.src = 'assets/play.svg';
+                        songLi.appendChild(playImg);
+
+                        var ellipsisI = document.createElement('i');
+                        ellipsisI.className = 'fas fa-ellipsis-h';
+                        ellipsisI.setAttribute('onclick', 'modernContextMenu(this)');
+                        songLi.appendChild(ellipsisI);
+
+                        var addImg = document.createElement('img');
+                        addImg.className = 'add';
+                        addImg.src = 'assets/add.svg';
+                        addImg.setAttribute('draggable', 'false');
+                        addImg.setAttribute('onclick', 'queueAddSong("' + artistData['views'][category]['data'][song]['id'] + '", this)');
+                        if(await isInLibrary(artistData['views'][category]['data'][song]['id'], 'songs')) addImg.style.display = 'none';
+                        songLi.appendChild(addImg);
+
+                        var titleText = document.createElement('h4');
+                        titleText.innerHTML = artistData['views'][category]['data'][song]['attributes']['name'];
+                        songLi.appendChild(titleText);
+
+                        var artistText = document.createElement('h5');
+                        artistText.innerHTML = artistData['views'][category]['data'][song]['attributes']['artistName'];
+                        artistText.setAttribute('onclick', 'presentArtist("' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '")');
+                        songLi.appendChild(artistText);
+
+                        document.getElementById('songs-container').appendChild(songLi);
+                    });
+                    topSongs.style.display = 'inline-block';
+                    break;
+            }
+        }
+    });
 
     document.getElementById('artist-show-name').innerHTML = artistData['attributes']['name'];
     document.getElementById('c-artist-loading-item').style.display = 'none';
@@ -770,7 +877,11 @@ async function presentSearchResult(text) {
             var avatarWrapper = document.createElement('div');
 
             var artworkImg = document.createElement('img');
-            artworkImg.src = searchData['artist']['data'][artist]['attributes']['artwork']['url'].replace('{w}', '140').replace('{h}', '140').replace('{f}', 'png');
+            if(checkDictPathExists(searchData, ['artist', 'data', artist, 'attributes', 'artwork', 'url'])) { 
+                artworkImg.src = searchData['artist']['data'][artist]['attributes']['artwork']['url'].replace('{w}', '140').replace('{h}', '140').replace('{f}', 'png');
+            } else {
+                artworkImg.src = 'assets/noArtwork.png';
+            }
             artworkImg.setAttribute('onclick', 'presentArtist("' + searchData['artist']['data'][artist]['id'] + '")');
             artworkImg.setAttribute('draggable', 'false');
 
@@ -908,7 +1019,7 @@ async function modernContextMenu(element) {
     }
 
     if(parent !== null) {
-        if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators') {
+        if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators' && parent.getAttribute('media_type') != 'stations') {
             if(parent.getAttribute('media_id').includes('.')) { //offline
                 addToLibrary.style.display = 'none';
                 removeFromLibrary.style.display = 'block';
@@ -941,11 +1052,13 @@ async function modernContextMenu(element) {
             addToLibrary.style.display = 'none';
             removeFromLibrary.style.display = 'none';
             contextMedia.style.display = 'none';
+            removeFromPlaylist.style.display = 'none';
         }
     } else {
         addToLibrary.style.display = 'none';
         removeFromLibrary.style.display = 'none';
         contextMedia.style.display = 'none';
+        removeFromPlaylist.style.display = 'none';
     }
 
     document.querySelectorAll('[contexted]').forEach(function(contextedElement) {
@@ -983,6 +1096,52 @@ function selectSong(line) {
 
     line.querySelector('.fa-ellipsis-h').style.color = 'white';
 }
+
+
+function selectSongInCustomShow(customClass, line) {
+    document.querySelectorAll('.' + customClass).forEach(function(element) {
+        element.removeAttribute('style');
+        element.querySelector('.fa-ellipsis-h').removeAttribute('style');
+        element.querySelector('img').removeAttribute('style');
+        
+        if(element.querySelector('svg') !== null && element.querySelector('svg').style.opacity == 1) {
+            element.querySelectorAll('.playback-bars__bar').forEach(function(bar) {
+                bar.style.fill = 'var(--mainAccent)';
+            });
+        } else {
+            element.querySelector('.index').removeAttribute('style');
+        }
+    });
+    line.style.backgroundColor = 'rgb(250, 35, 59)';
+    line.style.color = 'white';
+
+    line.querySelector('.fa-ellipsis-h').style.color = 'white';
+    if(line.querySelector('svg').style.opacity == 1) {
+        line.querySelector('.index').style.opacity = 0;
+    } else {
+        line.querySelector('.index').style.opacity = 1;
+    }
+    
+    line.querySelector('img').style.filter = 'invert(1)';
+    line.querySelectorAll('.playback-bars__bar').forEach(function(element) {
+        element.style.fill = 'white';
+    });
+}
+
+function selectSongInQueue(line) {
+    document.querySelectorAll('.queue-song-line').forEach(function(element) {
+        var setHidden = false;
+        if(element.style.display == 'none') setHidden = true;
+        element.removeAttribute('style');
+        if(setHidden) element.style.display = 'none';
+        element.querySelector('.fa-ellipsis-h').removeAttribute('style');
+    })
+    line.style.backgroundColor = 'rgb(250, 35, 59)';
+    line.style.color = 'white';
+
+    line.querySelector('.fa-ellipsis-h').style.color = 'white';
+}
+
 
 async function selectArtist(line) {
     if(line.style.color == 'white') return; //already selected
@@ -1081,6 +1240,30 @@ async function showContextMenu(type, id, element, online, id_type, pane) {
         contextMenu.style.pointerEvents = 'auto';
         contextMenu.style.opacity = 1;
     }, 10);
+}
+
+function presentDialog(text, button1text, button1action, button2text, button2action) { //button2text == '' -> one button dialog
+    var dialog = document.getElementById('dialog-popup');
+    var button1 = document.getElementById('ap-btn1');
+    var button2 = document.getElementById('ap-btn2');
+    var dialogText = document.getElementById('ap-body');
+
+    dialogText.innerHTML = text;
+    button1.innerHTML  = button1text;
+    if(button1action == '' || button1action === undefined) button1action = 'closeDialog();';
+    button1.setAttribute('onclick', button1action);
+    if(button2text != '' && button2text !== undefined) {
+        button2.innerHTML = button2text;
+        if(button2action == '' || button2action === undefined) button2action = 'closeDialog();';
+        button2.setAttribute('onclick', button2action);
+        dialog.className = 'shown';
+    } else {
+        dialog.className = 'solo shown';
+    }
+}
+
+function closeDialog() {
+    document.getElementById('dialog-popup').className = '';
 }
 
 function changeAppColorMode(color) {
