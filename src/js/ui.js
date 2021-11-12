@@ -581,6 +581,12 @@ async function presentOnlineAlbum(id) {
         } else if(songNumber < 2) {
             document.getElementById('album-show-shuffle').style.display = 'none';
         }
+
+        if(checkDictPathExists(albumData, ['relationships', 'tracks', 'data', song, 'attributes', 'offers', 0, 'expectedReleaseDate'])) {
+            songLi.style.pointerEvents = 'none';
+            songLi.style.opacity = 0.5;
+            songLi.setAttribute('disabled', '');
+        }
     });
 }
 
@@ -612,10 +618,12 @@ async function presentArtist(id) {
     document.getElementById('top-songs').className = '';
     document.getElementById('songs-container').innerHTML = '';
     document.getElementById('latest-featured').style.display = 'none';
+    if(document.getElementById('lf-img-overlay') !== null) document.getElementById('lf-img-overlay').remove();
     document.getElementById('top-songs').style.display = 'none';
+    document.getElementById('artist-content').setAttribute('media_id', id);
 
     var artistData = await getArtistData(id);
-    
+
     if(artistData['attributes']['editorialArtwork']['centeredFullscreenBackground'] !== undefined) {
         var parralaxAvatar = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['url'];
         var width = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['width'];
@@ -646,12 +654,17 @@ async function presentArtist(id) {
                 case 'featured-release': //Not tested
                     document.getElementById('top-songs').className = 'divided';
                     var latestFeatured = document.getElementById('latest-featured');
+                    latestFeatured.setAttribute('parent', 'nodelete');
+                    latestFeatured.setAttribute('media_type', artistData['views'][category]['data'][0]['type']);
+                    latestFeatured.setAttribute('media_id', artistData['views'][category]['data'][0]['id']);
+
                     document.getElementById('lf-title').innerHTML = 'Featured Release';
                     if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
-                        document.getElementById('lf-artwork').src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
+                        var src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
                     } else {
-                        document.getElementById('lf-artwork').src = 'assets/noArtwork.png';
+                        var src = 'assets/noArtwork.png';
                     }
+                    document.getElementById('lf-artwork').src = src;
 
                     var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
                     document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
@@ -662,17 +675,23 @@ async function presentArtist(id) {
                         document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
                     }
 
+                    latestFeatured.innerHTML = latestFeatured.innerHTML + '<div id="lf-img-overlay" onclick="presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] + ')"><i class="fas fa-play left" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="playItem(\'' + artistData['views'][category]['data'][0]['id'] + '\', \'' + src + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="modernContextMenu(this)"></i></div>';
                     latestFeatured.style.display = 'inline-block';
                     break;
                 case 'latest-release':
                     document.getElementById('top-songs').className = 'divided';
                     var latestFeatured = document.getElementById('latest-featured');
+                    latestFeatured.setAttribute('parent', 'nodelete');
+                    latestFeatured.setAttribute('media_type', artistData['views'][category]['data'][0]['type']);
+                    latestFeatured.setAttribute('media_id', artistData['views'][category]['data'][0]['id']);
+
                     document.getElementById('lf-title').innerHTML = 'Featured Release';
                     if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
-                        document.getElementById('lf-artwork').src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
+                        var src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
                     } else {
-                        document.getElementById('lf-artwork').src = 'assets/noArtwork.png';
+                        var src = 'assets/noArtwork.png';
                     }
+                    document.getElementById('lf-artwork').src = src;
 
                     var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
                     document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
@@ -683,6 +702,7 @@ async function presentArtist(id) {
                         document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
                     }
 
+                    latestFeatured.innerHTML = latestFeatured.innerHTML + '<div id="lf-img-overlay" onclick="presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] + ')"><i class="fas fa-play left" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="playItem(\'' + artistData['views'][category]['data'][0]['id'] + '\', \'' + src + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="modernContextMenu(this)"></i></div>';
                     latestFeatured.style.display = 'inline-block';
                     break;
                 case 'top-songs':
@@ -694,7 +714,7 @@ async function presentArtist(id) {
                     Object.keys(artistData['views'][category]['data']).forEach(async function(song) {
                         i++;
                         if(i > 12) return;
-                        
+
                         var songLi = document.createElement('li');
                         songLi.setAttribute('parent', 'nodelete');
                         songLi.setAttribute('media_type', 'songs');
@@ -731,7 +751,7 @@ async function presentArtist(id) {
 
                         var artistText = document.createElement('h5');
                         artistText.innerHTML = artistData['views'][category]['data'][song]['attributes']['artistName'];
-                        artistText.setAttribute('onclick', 'presentArtist("' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '")');
+                        artistText.setAttribute('onclick', 'presentArtist("' + id + '")');
                         songLi.appendChild(artistText);
 
                         document.getElementById('songs-container').appendChild(songLi);
@@ -1010,12 +1030,14 @@ async function modernContextMenu(element) {
     playLater.setAttribute('onclick', '');
 
     //nasty af
-    if(element.parentNode.getAttribute('parent') !== null) {
+    if(element.getAttribute('parent') !== null) {
+        parent = element;
+    } else if(element.parentNode.getAttribute('parent') !== null) {
         parent = element.parentNode;
     } else if(element.parentNode.parentNode.getAttribute('parent') !== null) {
         parent = element.parentNode.parentNode;
     } else if(element.parentNode.parentNode.parentNode.getAttribute('parent') !== null) {
-        parent = element.parentNode.parentNode.parentNode;
+           parent = element.parentNode.parentNode.parentNode;
     }
 
     if(parent !== null) {
@@ -1067,16 +1089,37 @@ async function modernContextMenu(element) {
 
     element.setAttribute('contexted', true);
 
-    if(element.getBoundingClientRect().left > $(window).width() / 2) {
-        contextMenu.style.left = element.getBoundingClientRect().left - 172 + element.getBoundingClientRect().width;
+    //special cases
+    if(element.id = 'player-info') {
+        contextMenu.style.zIndex = 999;
     } else {
-        contextMenu.style.left = element.getBoundingClientRect().left;
+        contextMenu.style.zIndex = 1;
     }
 
-    if(element.getBoundingClientRect().top > $(window).height() / 2) {
-        contextMenu.style.top = element.getBoundingClientRect().top - 130 + element.getBoundingClientRect().height;
+    if(element.offsetHeight > 100) {
+        if(element.getBoundingClientRect().left > $(window).width() / 2) {
+            contextMenu.style.left = element.getBoundingClientRect().left - 172 + element.getBoundingClientRect().width;
+        } else {
+            contextMenu.style.left = element.getBoundingClientRect().left;
+        }
+    
+        if(element.getBoundingClientRect().top > $(window).height() / 2) {
+            contextMenu.style.top = element.getBoundingClientRect().top - 130 + element.getBoundingClientRect().height;
+        } else {
+            contextMenu.style.top = element.getBoundingClientRect().top;
+        }
     } else {
-        contextMenu.style.top = element.getBoundingClientRect().top;
+        if(element.getBoundingClientRect().left > $(window).width() / 2) {
+            contextMenu.style.left = element.getBoundingClientRect().left - 172 + element.getBoundingClientRect().width;
+        } else {
+            contextMenu.style.left = element.getBoundingClientRect().left;
+        }
+
+        if(element.getBoundingClientRect().top > $(window).height() / 2) {
+            contextMenu.style.top = element.getBoundingClientRect().top - element.getBoundingClientRect().height;
+        } else {
+            contextMenu.style.top = element.getBoundingClientRect().top;
+        }
     }
 
     setTimeout(function() {
@@ -1103,6 +1146,11 @@ function selectSongInCustomShow(customClass, line) {
         element.removeAttribute('style');
         element.querySelector('.fa-ellipsis-h').removeAttribute('style');
         element.querySelector('img').removeAttribute('style');
+
+        if(element.getAttribute('disabled') !== null) {
+            element.style.pointerEvents = 'none';
+            element.style.opacity = 0.5;
+        }
         
         if(element.querySelector('svg') !== null && element.querySelector('svg').style.opacity == 1) {
             element.querySelectorAll('.playback-bars__bar').forEach(function(bar) {

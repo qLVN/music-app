@@ -14,12 +14,13 @@
         <script src="js/appleservices.js"></script>
     </head>
     <body>
+        <div class="control-wrapper" align="center">
+            <img src="assets/minimize.png" draggable="false" onclick="ipcRenderer.send('minimize_app');" />
+            <img src="assets/maximize.png" draggable="false" onclick="ipcRenderer.send('maximize_app');" id="maximize-img" />
+            <img src="assets/times_bold.png" draggable="false" class="red" onclick="ipcRenderer.send('close_app');" />
+        </div>
         <div class="toolbar">
-            <div class="control-wrapper" align="center">
-                <img src="assets/minimize.png" draggable="false" onclick="ipcRenderer.send('minimize_app');" />
-                <img src="assets/maximize.png" draggable="false" onclick="ipcRenderer.send('maximize_app');" id="maximize-img" />
-                <img src="assets/times_bold.png" draggable="false" class="red" onclick="ipcRenderer.send('close_app');" />
-            </div>
+            <div class="undrag"></div>
             <img src="assets/queue.svg" id="queue-button" onclick="toggleQueue()" style="background-color: transparent;" />
             <div class="volume-wrapper">
                 <img src="assets/volume.svg" />
@@ -38,11 +39,14 @@
                         <input type="range" id="playback-progress-slider" min="0" step="1">
                     </div>
                 </div>
-                <div id="player-info">
-                    <img id="player-artwork" />
+                <div id="player-info" parent="nodelete" media_type="songs">
+                    <img id="player-artwork" onclick="modernContextMenu(this)" />
                     <h4 id="player-name"></h4>
                     <span id="player-sub"></span>
+                    <i class="fas fa-ellipsis-h"></i>
                 </div>
+                <span id="player-current-time"></span>
+                <span id="player-max-time"></span>
             </div>
             <div class="music-wrapper">
                 <img src="assets/shuffle.svg" class="side" id="shuffle-button" onclick="toggleShuffle(this)" />
@@ -76,11 +80,12 @@
             <div class="nb-item" id="nb-songs" onclick="navBarSelect('songs')"><img src="assets/song.svg" class="line-icon" /> Songs</div>
             <span id="playlists-status">Loading playlists...</span>
             <div id="playlists-wrapper"></div>
-            <div class="bottom">
-                <div class="nb-item" id="nb-account" onclick="navBarSelect('account')"><img src="assets/account.svg" class="line-icon" /> Account</div>
-                <div class="nb-item" id="nb-settings" onclick="navBarSelect('settings')"><img src="assets/cog.svg" class="line-icon" /> Settings</div>
-            </div>
+            <span>&nbsp;</span>
+            <div class="nb-item" id="nb-account" onclick="navBarSelect('account')"><img src="assets/account.svg" class="line-icon alt" /> Account</div>
+            <div class="nb-item" id="nb-settings" onclick="navBarSelect('settings')"><img src="assets/cog.svg" class="line-icon alt" /> Settings</div>
         </div>
+        <div class="library-background-anim"></div>
+        <div class="toolbar-anim-background"></div>
         <div class="content-wrapper">
             <div class="c-item" id="c-listen-now">
                 <h1>Listen Now</h1>
@@ -262,8 +267,8 @@
             <div class="c-item" id="c-artist">
                 <img id="artist-show-parralax" />
                 <img id="artist-show-avatar" />
-                <div id="artist-content">
-                    <div class="upper-panel">
+                <div id="artist-content" parent="nodelete" media_type="artists" align="center">
+                    <div class="upper-panel" align="left">
                         <div id="latest-featured">
                             <h4 id="lf-title" class="title"></h4>
                             <img id="lf-artwork" />
@@ -283,7 +288,7 @@
                     <div class="parralax-bottom-wrapper">
                         <img src="assets/play.svg" />
                         <h2 id="artist-show-name"></h2>
-                        <i class="fas fa-ellipsis-h"></i>
+                        <i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i>
                     </div>
                 </div>
                 <div id="c-artist-loading-item" style="display: none;" align="center">

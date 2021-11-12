@@ -64,25 +64,25 @@ img[src="assets/loading.gif"] {
     color: #cbcbcb;
 }
 
-.toolbar .control-wrapper img {
+.control-wrapper img {
     filter: invert(1);
 }
 
-.toolbar .control-wrapper img:hover {
+.control-wrapper img:hover {
     background-color: #a6a6a6;
 }
 
-.toolbar .control-wrapper img:active {
+.control-wrapper img:active {
     background-color: #8b8b8b !important;
     filter: invert(1);
 }
 
-.toolbar .control-wrapper .red:active {
+.control-wrapper .red:active {
     filter: contrast(0.5) invert(1);
     background-color: #00ffe7 !important;
 }
 
-.toolbar .control-wrapper .red:hover {
+.control-wrapper .red:hover {
     background-color: var(--mainAccentInvert);
 }
 
@@ -221,6 +221,10 @@ img[src="assets/loading.gif"] {
     box-shadow: rgb(215 215 255 / 20%) 0px 8px 24px;
 }
 
+.content-wrapper #c-artist #artist-content .upper-panel #latest-featured img {
+    box-shadow: rgb(0 0 0 / 20%) 0px 7px 29px 0px;
+}
+
 #context-menu {
     background-color: #4e4e4eba;
     border: 1px solid #545454;
@@ -263,7 +267,7 @@ img[src="assets/loading.gif"] {
     border-left: 1px solid #505050;
 }
 
-.content-wrapper #c-songs tr:nth-child(even) {
+.content-wrapper #c-songs tr:nth-child(odd) {
     background-color: #363636;
 }
 

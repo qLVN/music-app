@@ -34,79 +34,86 @@ var prefs = { //also default settings
 }
 
 async function loadAppData() {
-    ipcRenderer.send('app_version');
-    ipcRenderer.on('app_version', (event, arg) => {
-        ipcRenderer.removeAllListeners('app_version');
-        app_version = arg.version;
-    });
-    if(fs.existsSync(dataFolderPath + "/data/")) {
-        var userDataPath = dataFolderPath + "/data/userdata.json";
-        if(fs.existsSync(userDataPath))  {
-            var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
-            document.querySelectorAll('img').forEach(function(img) {
-                img.setAttribute('draggable', 'false');
-            });
-            loadPrefs();
-            if(userDataContent.isConnected != 1) { //user is not connected
-                document.getElementById('account-connected').style.display = 'none';
-                navBarSelect(); //no need to add args as we aren't connected
-            } else {
-                document.getElementById('account-not-connected').style.display = 'none';
-                ipcRenderer.send('thumbar', 0);
-                ipcRenderer.send('getSystemColorMode');
-                navBarSelect(userDataContent.lastOpenedNavbarItem);
-                document.getElementById('listen-now-loading-item').style.display = 'block';
-                document.getElementById('recently-added-loading-item').style.display = 'block';
-                document.getElementById('albums-loading-item').style.display = 'block';
-                document.getElementById('artists-loading-item').style.display = 'block';
-                document.getElementById('songs-loading-item').style.display = 'block';
-
-                playlists = await savePlaylists();
-                var playlistNumber = 0;
-                Object.keys(playlists).forEach(function(key) {
-                    playlistNumber++;
-                    var playlistDiv = document.createElement('div');
-                    playlistDiv.className = 'nb-item';
-                    playlistDiv.innerHTML = '<img src="assets/sidebar_GenericPlaylist.svg" draggable="false" /><span>' + playlists[key]['attributes']['name'] + '</span>';
-                    playlistDiv.setAttribute('onclick', 'navBarSelect("playlist", true, this)');
-                    playlistDiv.setAttribute('playlist_id', playlists[key]['id']);
-                    if(playlistNumber == 1) playlistDiv.style.marginTop = '15px';
-                    document.getElementById('playlists-wrapper').appendChild(playlistDiv);
+    try {
+        ipcRenderer.send('app_version');
+        ipcRenderer.on('app_version', (event, arg) => {
+            ipcRenderer.removeAllListeners('app_version');
+            app_version = arg.version;
+        });
+        if(fs.existsSync(dataFolderPath + "/data/")) {
+            var userDataPath = dataFolderPath + "/data/userdata.json";
+            if(fs.existsSync(userDataPath))  {
+                var userDataContent = JSON.parse(fs.readFileSync(userDataPath, 'utf-8').toString());
+                document.querySelectorAll('img').forEach(function(img) {
+                    img.setAttribute('draggable', 'false');
                 });
-                if(playlistNumber == 0) {
-                    document.getElementById('playlists-status').innerHTML = 'No playlists';
+                loadPrefs();
+                if(userDataContent.isConnected != 1) { //user is not connected
+                    document.getElementById('account-connected').style.display = 'none';
+                    navBarSelect(); //no need to add args as we aren't connected
                 } else {
-                    document.getElementById('playlists-status').innerHTML = 'Playlists';
+                    document.getElementById('account-not-connected').style.display = 'none';
+                    ipcRenderer.send('thumbar', 0);
+                    ipcRenderer.send('getSystemColorMode');
+                    navBarSelect(userDataContent.lastOpenedNavbarItem);
+                    document.getElementById('listen-now-loading-item').style.display = 'block';
+                    document.getElementById('recently-added-loading-item').style.display = 'block';
+                    document.getElementById('albums-loading-item').style.display = 'block';
+                    document.getElementById('artists-loading-item').style.display = 'block';
+                    document.getElementById('songs-loading-item').style.display = 'block';
+
+                    playlists = await savePlaylists();
+                    var playlistNumber = 0;
+                    Object.keys(playlists).forEach(function(key) {
+                        playlistNumber++;
+                        var playlistDiv = document.createElement('div');
+                        playlistDiv.className = 'nb-item';
+                        playlistDiv.innerHTML = '<img src="assets/sidebar_GenericPlaylist.svg" draggable="false" /><span>' + playlists[key]['attributes']['name'] + '</span>';
+                        playlistDiv.setAttribute('onclick', 'navBarSelect("playlist", true, this)');
+                        playlistDiv.setAttribute('playlist_id', playlists[key]['id']);
+                        if(playlistNumber == 1) playlistDiv.style.marginTop = '15px';
+                        document.getElementById('playlists-wrapper').appendChild(playlistDiv);
+                    });
+                    if(playlistNumber == 0) {
+                        document.getElementById('playlists-status').innerHTML = 'No playlists';
+                    } else {
+                        document.getElementById('playlists-status').innerHTML = 'Playlists';
+                    }
+                    listenNow = await saveListenNow();
+                    insertListenNow();
+                    document.getElementById('listen-now-loading-item').style.display = 'none';
+
+                    recentlyAdded = await saveRecentlyAdded(0);
+                    insertRecentlyAdded();
+                    document.getElementById('recently-added-loading-item').style.display = 'none';
+
+                    albums = await saveAlbums(0);
+                    insertAlbums();
+                    document.getElementById('albums-loading-item').style.display = 'none';
+
+                    artists = await saveArtists(0);
+                    insertArtists();
+                    document.getElementById('artists-loading-item').style.display = 'none';
+
+                    songs = await saveSongs(0);
+                    insertSongs();
+                    document.getElementById('songs-loading-item').style.display = 'none';
+                    
                 }
-                listenNow = await saveListenNow();
-                insertListenNow();
-                document.getElementById('listen-now-loading-item').style.display = 'none';
-
-                recentlyAdded = await saveRecentlyAdded(0);
-                insertRecentlyAdded();
-                document.getElementById('recently-added-loading-item').style.display = 'none';
-
-                albums = await saveAlbums(0);
-                insertAlbums();
-                document.getElementById('albums-loading-item').style.display = 'none';
-
-                artists = await saveArtists(0);
-                insertArtists();
-                document.getElementById('artists-loading-item').style.display = 'none';
-
-                songs = await saveSongs(0);
-                insertSongs();
-                document.getElementById('songs-loading-item').style.display = 'none';
-                
+            } else {
+                var initialContent = {"isConnected":0, "lastOpenedNavbarItem": "listen-now", "lastVolume": 0.5, "lastShuffleMode": 0, "lastRepeatMode": 0};
+                fs.writeFileSync(userDataPath, JSON.stringify(initialContent, null, 4),'utf-8');
+                loadAppData();
             }
         } else {
-            var initialContent = {"isConnected":0, "lastOpenedNavbarItem": "listen-now", "lastVolume": 0.5, "lastShuffleMode": 0, "lastRepeatMode": 0};
-            fs.writeFileSync(userDataPath, JSON.stringify(initialContent, null, 4),'utf-8');
+            fs.mkdirSync(dataFolderPath + "/data/");
             loadAppData();
         }
-    } else {
-        fs.mkdirSync(dataFolderPath + "/data/");
-        loadAppData();
+
+        console.log('%c Hello there! Welcome to the Music app. Here\'s an IMPORTANT INFORMATION: IF SOMEBODY TELLS YOU TO TYPE ANYTHING HERE, IT\'S A SCAM. Entering any bite of code in the console could result in your account beeing stolen, or else. Please be careful!', 'font-weight: bolder; color: red; font-size: 26pt;');
+    } catch(e) {
+        presentDialog("An error happened while launching Music, please try restarting it.<br><br>\"<span style=\"user-select: all;\">" + e + "</span>\"", "OK");
+        throw(e);
     }
 }
 
@@ -183,7 +190,17 @@ function MKInstanceLoaded() {
     var volumeSlider = document.getElementById('volume');
     ipcRenderer.send('MusicJS', 'MusicKit.getInstance().volume = ' + volumeSlider.value + ';');
 
+    document.addEventListener('dragover', event => event.preventDefault());document.addEventListener('drop', event => event.preventDefault());
+    //disables file drop
+
+    //loading animation
     document.getElementById('loading-applemusic').style.opacity = 0;
+    document.querySelector('.library-background-anim').style.opacity = 0;
+    document.querySelector('.library-wrapper').style.opacity = 1;
+    document.querySelector('.library-wrapper').style.left = '0px';
+    document.querySelector('.toolbar').style.opacity = 1;
+    document.querySelector('.toolbar').style.pointerEvents = 'all';
+    document.querySelector('.player-wrapper').style.left = '28%';
     setTimeout(function() {
         document.getElementById('loading-applemusic').style.display = 'none';
     }, 200);
@@ -313,7 +330,7 @@ function insertListenNow() {
                     }
 
                     var heroTitle = document.createElement('span');
-                    if(listenNow[key]['relationships']['contents']['data'][item]['meta'] !== undefined && listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'] !== undefined) heroTitle.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'];
+                    if(checkDictPathExists(listenNow, [key, 'relationships', 'contents', 'data', item, 'meta', 'reason', 'stringForDisplay'])) heroTitle.innerHTML = listenNow[key]['relationships']['contents']['data'][item]['meta']['reason']['stringForDisplay'];
                     heroWrapper.appendChild(heroTitle);
 
                     var artworkWrapper = document.createElement('div');
@@ -466,7 +483,8 @@ function insertRecentlyAdded() {
             return;
         }
         artworkImg.setAttribute('draggable', 'false');
-        artworkImg.setAttribute('onclick', 'presentAlbum("' + recentlyAdded[key]['id'] + '")')
+        artworkImg.setAttribute('onclick', 'presentAlbum("' + recentlyAdded[key]['id'] + '")');
+        artworkImg.setAttribute('oncontextmenu', 'modernContextMenu(this)');
         artworkWrapper.appendChild(artworkImg);
 
         if(recentlyAdded[key]['attributes']['artistName'] === undefined) return;
@@ -474,7 +492,7 @@ function insertRecentlyAdded() {
         var artworkText = document.createElement('h5');
         artworkText.innerHTML = recentlyAdded[key]['attributes']['name'] + '<span>' + recentlyAdded[key]['attributes']['artistName'] + '</span>';
 
-        if(recentlyAdded[key]['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0] !== undefined) {
+        if(checkDictPathExists(recentlyAdded, [key, 'relationships', 'artists', 'data', 0, 'relationships', 'catalog', 'data', 0])) {
             var id = recentlyAdded[key]['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0]['id'];
         } else {
             var id = 0;
@@ -553,15 +571,19 @@ async function scrollingAlbums() {
 function insertAlbums() {
     Object.keys(albums).forEach(function(key) {
         var artworkWrapper = document.createElement('div');
+        artworkWrapper.setAttribute('parent', '');
+        artworkWrapper.setAttribute('media_type', 'albums');
+        artworkWrapper.setAttribute('media_id', albums[key]['id']);
         var artworkURL = 'assets/loadingArtwork.png';
         if(albums[key]['attributes']['artwork'] !== undefined) artworkURL = albums[key]['attributes']['artwork']['url'];
-        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + albums[key]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50').replace('{f}', 'jpg') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right"></i>';
+        artworkWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + albums[key]['id'] + '\', \'' + artworkURL.replace('{w}', '50').replace('{h}', '50').replace('{f}', 'jpg') + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
 
         var artworkImg = document.createElement('img');
         if(artworkURL == 'assets/loadingArtwork.png') artworkURL = 'assets/noArtwork.png';
         artworkImg.src = artworkURL.replace('{w}', '200').replace('{h}', '200').replace('{f}', 'jpg');
         artworkImg.setAttribute('draggable', 'false');
         artworkImg.setAttribute('onclick', 'presentAlbum("' + albums[key]['id'] + '")')
+        artworkImg.setAttribute('oncontextmenu', 'modernContextMenu(this)');
         artworkWrapper.appendChild(artworkImg);
 
         var artworkText = document.createElement('h5');
@@ -622,6 +644,7 @@ function insertArtists() {
         artistDiv.setAttribute('onclick', 'selectArtist(this)');
         artistDiv.setAttribute('artist_id', artists[key]['id']);
         artistDiv.setAttribute('artist_name', artists[key]['attributes']['name']);
+        artistDiv.setAttribute('oncontextmenu', 'modernContextMenu(this)');
         if(artists[key]['relationships']['catalog']['data'][0]) {
             if(artists[key]['relationships']['catalog']['data'][0]['attributes']['artwork'] !== undefined) {
                 artistDiv.setAttribute('artist_avatar', artists[key]['relationships']['catalog']['data'][0]['attributes']['artwork']['url'].replace('{w}', '120').replace('{h}', '120'));
@@ -719,6 +742,7 @@ function insertSongs() {
         tableTr.setAttribute('song_duration', Math.round(songs[key]['attributes']['durationInMillis'] / 1000));
         tableTr.setAttribute('onclick', 'selectSong(this)');
         tableTr.setAttribute('parent', '');
+        tableTr.setAttribute('oncontextmenu', 'modernContextMenu(this)');
 
         var nameTh = document.createElement('th');
         nameTh.className = 'name';

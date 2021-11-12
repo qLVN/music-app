@@ -8,7 +8,7 @@ const rpc = new DiscordRPC.Client({
 var activity = {
     details: '⌛ Loading...',
     largeImageKey: 'music',
-    largeImageText: 'Music v' + app_version + ' from LVN',
+    largeImageText: 'Music vINFDEV2 from LVN',
     smallImageKey: 'play',
     smallImageText: 'Playing',
     instance: false
@@ -253,6 +253,16 @@ function setPlaybackTime(time) {
     }
 
     if(document.getElementById('player-info').style.display == 'none') document.getElementById('player-info').style.display = 'block';
+
+    var date = new Date(time * 1000);
+    var seconds = date.getUTCSeconds().toString();
+    if(seconds.length == 1) seconds = '0' + seconds;
+    document.getElementById('player-current-time').innerHTML = date.getUTCMinutes() + ":" + seconds;
+
+    date = new Date(playbackSlider.getAttribute('max') * 1000);
+    seconds = date.getUTCSeconds().toString();
+    if(seconds.length == 1) seconds = '0' + seconds;
+    document.getElementById('player-max-time').innerHTML = date.getUTCMinutes() + ":" + seconds;
 }
 
 function setQueueItems(items) {
@@ -311,6 +321,7 @@ function setNowPlayingItem(name, artwork, artist, album, duration, index, id) {
     }
     
     var playerInfo = document.getElementById('player-info');
+    playerInfo.setAttribute('media_id', id);
     document.getElementById('player-name').innerText = name;
     document.getElementById('player-sub').innerText = artist + ' — ' + album;
     document.getElementById('player-artwork').src = 'assets/loadingArtwork.png';

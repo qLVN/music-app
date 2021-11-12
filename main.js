@@ -63,7 +63,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1150,
     height: 800,
-    minWidth: 900,
+    minWidth: 1150,
     minHeight: 500,
     transparent: false,
     icon: path.join(iconPath),
