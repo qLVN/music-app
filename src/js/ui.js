@@ -2,6 +2,8 @@ const electron = require('electron');
 const { ipcRenderer } = require('electron');
 const { shell } = require('electron'); //used in html to open links
 
+var lastTab = null;
+
 function useSearchBar() {
     var idleLogo = document.getElementById('idle-logo');
     var searchInput = document.getElementById('search');
@@ -221,6 +223,7 @@ selectedNavbar = null;
 function navBarSelect(id, isExtra, playlistButton) {
     if(isExtra != true) isExtra = false;
 
+    lastTab = selectedNavbar;
     selectedNavbar = id;
 
     var userDataPath = dataFolderPath + "/data/userdata.json";
@@ -284,6 +287,7 @@ async function presentPlaylist(id) {
     document.getElementById('playlist-show-description').innerHTML = '';
     document.getElementById('playlist-song-list').innerHTML = '';
     document.getElementById('playlist-show-play').removeAttribute('onclick');
+    document.getElementById('playlist-header').setAttribute('media_id', id);
 
     var playlistData = await getOfflinePlaylistData(id);
     
@@ -452,142 +456,152 @@ function toggleQueue() {
 }
 
 async function presentAlbum(id) {
-    document.getElementById('c-album').removeAttribute('item_id');
-    document.getElementById('album-show-complete-album').className = 'hidden';
-    document.getElementById('album-show-complete-album').removeAttribute('onclick');
-    document.getElementById('album-song-list').innerHTML = '';
-    navBarSelect('album', true);
-    if(document.getElementById('search-window').style.display == 'block') toggleSearchWindow();
-    document.getElementById('album-loading-item').style.display = 'block';
-    document.getElementById('album-show-artwork').src = 'assets/noArtwork.png';
-    document.getElementById('album-show-description').innerHTML = '';
-    document.getElementById('album-show-decription-more').style.display = 'none';
+    try {
+        document.getElementById('c-album').removeAttribute('item_id');
+        document.getElementById('album-show-complete-album').className = 'hidden';
+        document.getElementById('album-show-complete-album').removeAttribute('onclick');
+        document.getElementById('album-song-list').innerHTML = '';
+        navBarSelect('album', true);
+        if(document.getElementById('search-window').style.display == 'block') toggleSearchWindow();
+        document.getElementById('album-loading-item').style.display = 'block';
+        document.getElementById('album-show-artwork').src = 'assets/noArtwork.png';
+        document.getElementById('album-show-description').innerHTML = '';
+        document.getElementById('album-show-decription-more').style.display = 'none';
 
-    var albumData = await getAlbumData(id);
-    document.getElementById('c-album').setAttribute('item_id', albumData['relationships']['catalog']['data'][0]['id']);
-    document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270');
-    document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
-    document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
-    if(albumData['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0] !== undefined) {
-        var id = albumData['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0]['id'];
-    } else {
-        var id = 0;
-    }
-    document.getElementById('album-show-artist').setAttribute('onclick', 'presentArtist("' + id + '")')
-    document.getElementById('album-show-genre-date').innerHTML = albumData['attributes']['genreNames'][0] + ' · ' + albumData['attributes']['releaseDate'].substring(0, 4);
-
-    var date = new Date(albumData['attributes']['releaseDate']);
-    document.getElementById('album-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
-    document.getElementById('album-counter').innerHTML = albumData['attributes']['trackCount'] + ' Song(s)';
-    document.getElementById('album-copyright').innerHTML = albumData['relationships']['catalog']['data'][0]['attributes']['copyright'];
-
-    document.getElementById('album-loading-item').style.display = 'none';
-
-    document.getElementById('album-show-play').setAttribute('onclick', 'playItem("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '", "album")');
-
-    var songNumber = 0;
-    Object.keys(albumData['relationships']['tracks']['data']).forEach(function(song) {
-        songNumber++;
-        var songLi = document.createElement('li');
-        songLi.className = 'album-show-song-line';
-        songLi.setAttribute('onclick', 'selectSongInCustomShow("album-show-song-line", this)');
-        songLi.setAttribute('ondblclick', 'this.querySelector(\'img[src="assets/play.svg"]\').click()');
-        songLi.setAttribute('media_type', 'songs');
-        songLi.setAttribute('media_id', albumData['relationships']['tracks']['data'][song]['id']);
-        songLi.setAttribute('parent', '');
-        min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
-        sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
-        if (sec < 10) {
-            sec = '0' + sec;
+        var albumData = await getAlbumData(id);
+        document.getElementById('c-album').setAttribute('item_id', albumData['relationships']['catalog']['data'][0]['id']);
+        document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270');
+        document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
+        document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
+        if(albumData['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0] !== undefined) {
+            var id = albumData['relationships']['artists']['data'][0]['relationships']['catalog']['data'][0]['id'];
+        } else {
+            var id = 0;
         }
-        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromItem(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', ' + (songNumber - 1) + ', \'album\')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><span class="time">' + min + ':' + sec + '</span>';
-        songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
+        document.getElementById('album-show-artist').setAttribute('onclick', 'presentArtist("' + id + '")')
+        document.getElementById('album-show-genre-date').innerHTML = albumData['attributes']['genreNames'][0] + ' · ' + albumData['attributes']['releaseDate'].substring(0, 4);
 
-        document.getElementById('album-song-list').appendChild(songLi);
-        if(songNumber == 2) {
-            document.getElementById('album-show-shuffle').style.display = 'inline-block';
-        } else if(songNumber < 2) {
-            document.getElementById('album-show-shuffle').style.display = 'none';
+        var date = new Date(albumData['attributes']['releaseDate']);
+        document.getElementById('album-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
+        document.getElementById('album-counter').innerHTML = albumData['attributes']['trackCount'] + ' Song(s)';
+        document.getElementById('album-copyright').innerHTML = albumData['relationships']['catalog']['data'][0]['attributes']['copyright'];
+
+        document.getElementById('album-loading-item').style.display = 'none';
+
+        document.getElementById('album-show-play').setAttribute('onclick', 'playItem("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '", "album")');
+
+        var songNumber = 0;
+        Object.keys(albumData['relationships']['tracks']['data']).forEach(function(song) {
+            songNumber++;
+            var songLi = document.createElement('li');
+            songLi.className = 'album-show-song-line';
+            songLi.setAttribute('onclick', 'selectSongInCustomShow("album-show-song-line", this)');
+            songLi.setAttribute('ondblclick', 'this.querySelector(\'img[src="assets/play.svg"]\').click()');
+            songLi.setAttribute('media_type', 'songs');
+            songLi.setAttribute('media_id', albumData['relationships']['tracks']['data'][song]['relationships']['catalog']['data'][0]['id']);
+            songLi.setAttribute('parent', '');
+            min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
+            sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
+            if (sec < 10) {
+                sec = '0' + sec;
+            }
+            songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromItem(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '\', ' + (songNumber - 1) + ', \'album\')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><span class="time">' + min + ':' + sec + '</span>';
+            songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
+
+            document.getElementById('album-song-list').appendChild(songLi);
+            if(songNumber == 2) {
+                document.getElementById('album-show-shuffle').style.display = 'inline-block';
+            } else if(songNumber < 2) {
+                document.getElementById('album-show-shuffle').style.display = 'none';
+            }
+        });
+
+        if(songNumber < albumData['relationships']['catalog']['data'][0]['attributes']['trackCount']) {
+            document.getElementById('album-show-complete-album').className = '';
+            document.getElementById('album-show-complete-album').setAttribute('onclick', 'presentOnlineAlbum("' + albumData['relationships']['catalog']['data'][0]['id'] + '")');
         }
-    });
-
-    if(songNumber < albumData['relationships']['catalog']['data'][0]['attributes']['trackCount']) {
-        document.getElementById('album-show-complete-album').className = '';
-        document.getElementById('album-show-complete-album').setAttribute('onclick', 'presentOnlineAlbum("' + albumData['relationships']['catalog']['data'][0]['id'] + '")');
+    } catch (error) {
+        presentDialog("An error happened while loading album data, please try again later.", "OK");
+        throw error;
     }
 }
 
 async function presentOnlineAlbum(id) {
-    document.getElementById('c-album').removeAttribute('item_id');
-    document.getElementById('album-song-list').innerHTML = '';
-    document.getElementById('album-show-complete-album').className = 'hidden';
-    document.getElementById('album-show-complete-album').removeAttribute('onclick');
-    navBarSelect('album', true);
-    if(document.getElementById('search-window').style.display == 'block') hideSearchBar();
-    document.getElementById('album-loading-item').style.display = 'block';
-    document.getElementById('album-show-artwork').src = 'assets/noArtwork.png';
-    document.getElementById('album-show-description').innerHTML = '';
-    document.getElementById('album-show-decription-more').style.display = 'none';
+    try {
+        document.getElementById('c-album').removeAttribute('item_id');
+        document.getElementById('album-song-list').innerHTML = '';
+        document.getElementById('album-show-complete-album').className = 'hidden';
+        document.getElementById('album-show-complete-album').removeAttribute('onclick');
+        navBarSelect('album', true);
+        if(document.getElementById('search-window').style.display == 'block') hideSearchBar();
+        document.getElementById('album-loading-item').style.display = 'block';
+        document.getElementById('album-show-artwork').src = 'assets/noArtwork.png';
+        document.getElementById('album-show-description').innerHTML = '';
+        document.getElementById('album-show-decription-more').style.display = 'none';
 
-    var albumData = await getOnlineAlbumData(id);
-    document.getElementById('c-album').setAttribute('item_id', albumData['id']);
-    document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270').replace('{f}', 'png');
-    document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
-    document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
-    var id = albumData['relationships']['artists']['data'][0]['id'];
-    document.getElementById('album-show-artist').setAttribute('onclick', 'presentArtist("' + id + '")')
-    document.getElementById('album-show-genre-date').innerHTML = albumData['attributes']['genreNames'][0] + ' · ' + albumData['attributes']['releaseDate'].substring(0, 4);
+        var albumData = await getOnlineAlbumData(id);
+        document.getElementById('c-album').setAttribute('item_id', albumData['id']);
+        document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270').replace('{f}', 'png');
+        document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
+        document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
+        var id = albumData['relationships']['artists']['data'][0]['id'];
+        document.getElementById('album-show-artist').setAttribute('onclick', 'presentArtist("' + id + '")')
+        document.getElementById('album-show-genre-date').innerHTML = albumData['attributes']['genreNames'][0] + ' · ' + albumData['attributes']['releaseDate'].substring(0, 4);
 
-    var date = new Date(albumData['attributes']['releaseDate']);
-    document.getElementById('album-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
-    document.getElementById('album-counter').innerHTML = albumData['attributes']['trackCount'] + ' Song(s)';
-    document.getElementById('album-copyright').innerHTML = albumData['attributes']['copyright'];
+        var date = new Date(albumData['attributes']['releaseDate']);
+        document.getElementById('album-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
+        document.getElementById('album-counter').innerHTML = albumData['attributes']['trackCount'] + ' Song(s)';
+        document.getElementById('album-copyright').innerHTML = albumData['attributes']['copyright'];
 
-    document.getElementById('album-loading-item').style.display = 'none';
-    if(checkDictPathExists(albumData, ['attributes', 'editorialNotes', 'standard'])) {
-        document.getElementById('album-show-description').innerHTML = albumData['attributes']['editorialNotes']['standard'];
-        if(document.getElementById('album-show-description').offsetHeight < document.getElementById('album-show-description').scrollHeight) {
-            document.getElementById('album-show-decription-more').style.display = 'inline-block';
+        document.getElementById('album-loading-item').style.display = 'none';
+        if(checkDictPathExists(albumData, ['attributes', 'editorialNotes', 'standard'])) {
+            document.getElementById('album-show-description').innerHTML = albumData['attributes']['editorialNotes']['standard'];
+            if(document.getElementById('album-show-description').offsetHeight < document.getElementById('album-show-description').scrollHeight) {
+                document.getElementById('album-show-decription-more').style.display = 'inline-block';
+            }
         }
+        
+
+        document.getElementById('album-show-play').setAttribute('onclick', 'playItem("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '", "album")');
+
+        var songNumber = 0;
+        Object.keys(albumData['relationships']['tracks']['data']).forEach(function(song) {
+            songNumber++;
+            var songLi = document.createElement('li');
+            songLi.className = 'album-show-song-line';
+            songLi.setAttribute('onclick', 'selectSongInCustomShow("album-show-song-line", this)');
+            songLi.setAttribute('ondblclick', 'this.querySelector(\'img[src="assets/play.svg"]\').click()');
+            songLi.setAttribute('media_type', 'songs');
+            songLi.setAttribute('media_id', albumData['relationships']['tracks']['data'][song]['id']);
+            songLi.setAttribute('parent', 'nodelete');
+            min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
+            sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
+            if (sec < 10) {
+                sec = '0' + sec;
+            }
+
+            songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromItem(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ', \'album\')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><span class="time">' + min + ':' + sec + '</span>';
+            songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
+            if(albumData['relationships']['tracks']['data'][song]['attributes']['popularity'] >= 0.7) {
+                songLi.innerHTML = songLi.innerHTML + '<img src="assets/popular.png" class="popular" />';
+            }
+            document.getElementById('album-song-list').appendChild(songLi);
+            if(songNumber == 2) {
+                document.getElementById('album-show-shuffle').style.display = 'inline-block';
+            } else if(songNumber < 2) {
+                document.getElementById('album-show-shuffle').style.display = 'none';
+            }
+
+            if(checkDictPathExists(albumData, ['relationships', 'tracks', 'data', song, 'attributes', 'offers', 0, 'expectedReleaseDate'])) {
+                songLi.style.pointerEvents = 'none';
+                songLi.style.opacity = 0.5;
+                songLi.setAttribute('disabled', '');
+            }
+        });
+    } catch (error) {
+        presentDialog("An error happened while loading album data, please try again later.", "OK");
+        throw error;
     }
-    
-
-    document.getElementById('album-show-play').setAttribute('onclick', 'playItem("' + albumData['id'] + '", "' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '", "album")');
-
-    var songNumber = 0;
-    Object.keys(albumData['relationships']['tracks']['data']).forEach(function(song) {
-        songNumber++;
-        var songLi = document.createElement('li');
-        songLi.className = 'album-show-song-line';
-        songLi.setAttribute('onclick', 'selectSongInCustomShow("album-show-song-line", this)');
-        songLi.setAttribute('ondblclick', 'this.querySelector(\'img[src="assets/play.svg"]\').click()');
-        songLi.setAttribute('media_type', 'songs');
-        songLi.setAttribute('media_id', albumData['relationships']['tracks']['data'][song]['id']);
-        songLi.setAttribute('parent', 'nodelete');
-        min = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000/60) << 0),
-        sec = Math.floor((albumData['relationships']['tracks']['data'][song]['attributes']['durationInMillis']/1000) % 60);
-        if (sec < 10) {
-            sec = '0' + sec;
-        }
-
-        songLi.innerHTML = '<img src="assets/play.svg" draggable="false" onclick="playSongFromItem(\'' + albumData['id'] + '\', \'' + albumData['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', ' + (songNumber - 1) + ', \'album\')" /><span class="index">' + songNumber + '</span>' + albumData['relationships']['tracks']['data'][song]['attributes']['name'] + '<i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i><span class="time">' + min + ':' + sec + '</span>';
-        songLi.innerHTML = songLi.innerHTML + '<svg class="playback-bars__svg" viewBox="0 0 11 11"><defs> <rect id="bar-ember34" x="0" width="2.1" y="0" height="11" rx=".25"></rect> <mask id="bar-mask-ember34"> <use href="#bar-ember34" fill="white"></use> </mask> </defs> <g mask="url(#bar-mask-ember34)"> <use class="playback-bars__bar playback-bars__bar--1" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(2.9668 0)"> <use class="playback-bars__bar playback-bars__bar--2" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(5.9333 0)"> <use class="playback-bars__bar playback-bars__bar--3" href="#bar-ember34"></use> </g> <g mask="url(#bar-mask-ember34)" transform="translate(8.8999 0)"> <use class="playback-bars__bar playback-bars__bar--4" href="#bar-ember34"></use> </g></svg>';
-        if(albumData['relationships']['tracks']['data'][song]['attributes']['popularity'] >= 0.7) {
-            songLi.innerHTML = songLi.innerHTML + '<img src="assets/popular.png" class="popular" />';
-        }
-        document.getElementById('album-song-list').appendChild(songLi);
-        if(songNumber == 2) {
-            document.getElementById('album-show-shuffle').style.display = 'inline-block';
-        } else if(songNumber < 2) {
-            document.getElementById('album-show-shuffle').style.display = 'none';
-        }
-
-        if(checkDictPathExists(albumData, ['relationships', 'tracks', 'data', song, 'attributes', 'offers', 0, 'expectedReleaseDate'])) {
-            songLi.style.pointerEvents = 'none';
-            songLi.style.opacity = 0.5;
-            songLi.setAttribute('disabled', '');
-        }
-    });
 }
 
 function toggleFullDescription(state, element) {
@@ -606,164 +620,241 @@ function toggleFullDescription(state, element) {
 }
 
 async function presentArtist(id) {
-    navBarSelect('artist', true);
-    if(document.getElementById('search-window').style.display == 'block') hideSearchBar();
-    document.getElementById('c-artist-loading-item').style.display = 'block';
+    try {
+        navBarSelect('artist', true);
+        if(document.getElementById('search-window').style.display == 'block') hideSearchBar();
+        document.getElementById('c-artist-loading-item').style.display = 'block';
 
-    document.getElementById('artist-show-avatar').removeAttribute('src'); //reset avatar/heroart
-    document.getElementById('artist-show-parralax').style.display = 'none';
-    document.getElementById('artist-show-avatar').style.display = 'block';
-    document.getElementById('artist-content').className = 'content-avatarmode';
-    document.getElementById('artist-show-name').removeAttribute('style');
-    document.getElementById('top-songs').className = '';
-    document.getElementById('songs-container').innerHTML = '';
-    document.getElementById('latest-featured').style.display = 'none';
-    if(document.getElementById('lf-img-overlay') !== null) document.getElementById('lf-img-overlay').remove();
-    document.getElementById('top-songs').style.display = 'none';
-    document.getElementById('artist-content').setAttribute('media_id', id);
-
-    var artistData = await getArtistData(id);
-
-    if(artistData['attributes']['editorialArtwork']['centeredFullscreenBackground'] !== undefined) {
-        var parralaxAvatar = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['url'];
-        var width = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['width'];
-        var height = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['height'];
-        document.getElementById('artist-show-parralax').src = parralaxAvatar.replace('{w}', width).replace('{h}', height).replace('{f}', 'png');
-        document.getElementById('artist-show-parralax').style.display = 'block';
-        document.getElementById('artist-show-avatar').style.display = 'none';
-        document.getElementById('artist-content').className = 'content-heromode';
-        document.getElementById('artist-show-name').style.color = 'white';
-    } else if(artistData['attributes']['artwork'] !== undefined) {
-        document.getElementById('artist-show-avatar').src = artistData['attributes']['artwork']['url'].replace('{w}', '190').replace('{h}', '190').replace('{f}', 'png');
+        document.getElementById('artist-show-avatar').removeAttribute('src'); //reset avatar/heroart
         document.getElementById('artist-show-parralax').style.display = 'none';
         document.getElementById('artist-show-avatar').style.display = 'block';
         document.getElementById('artist-content').className = 'content-avatarmode';
         document.getElementById('artist-show-name').removeAttribute('style');
-    } else { // no avatar
-        document.getElementById('artist-show-avatar').removeAttribute('src');
-        document.getElementById('artist-show-parralax').style.display = 'none';
-        document.getElementById('artist-show-avatar').style.display = 'block';
-        document.getElementById('artist-content').className = 'content-avatarmode';
-        document.getElementById('artist-show-name').removeAttribute('style');
-    }
+        document.getElementById('top-songs').className = '';
+        document.getElementById('songs-container').innerHTML = '';
+        document.getElementById('latest-featured').style.display = 'none';
+        if(document.getElementById('lf-img-overlay') !== null) document.getElementById('lf-img-overlay').remove();
+        document.getElementById('top-songs').style.display = 'none';
+        document.getElementById('artist-content').setAttribute('media_id', id);
+        document.getElementById('featured-albums').style.display = 'none';
+        document.getElementById('falbums-container').innerHTML = '';
+        document.getElementById('full-albums').style.display = 'none';
+        document.getElementById('fullalbums-container').innerHTML = '';
 
-    Object.keys(artistData['meta']['views']['order']).forEach(function(category) {
-        category = artistData['meta']['views']['order'][category];
-        if(Object.keys(artistData['views'][category]['data']).length > 0) {
-            switch(category) {
-                case 'featured-release': //Not tested
-                    document.getElementById('top-songs').className = 'divided';
-                    var latestFeatured = document.getElementById('latest-featured');
-                    latestFeatured.setAttribute('parent', 'nodelete');
-                    latestFeatured.setAttribute('media_type', artistData['views'][category]['data'][0]['type']);
-                    latestFeatured.setAttribute('media_id', artistData['views'][category]['data'][0]['id']);
+        var artistData = await getArtistData(id);
 
-                    document.getElementById('lf-title').innerHTML = 'Featured Release';
-                    if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
-                        var src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
-                    } else {
-                        var src = 'assets/noArtwork.png';
-                    }
-                    document.getElementById('lf-artwork').src = src;
-
-                    var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
-                    document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
-                    document.getElementById('lf-songtitle').innerHTML = artistData['views'][category]['data'][0]['attributes']['name'];
-                    if(artistData['views'][category]['data'][0]['attributes']['trackCount'] == 1) {
-                        document.getElementById('lf-counter').innerHTML = '1 Song'
-                    } else {
-                        document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
-                    }
-
-                    latestFeatured.innerHTML = latestFeatured.innerHTML + '<div id="lf-img-overlay" onclick="presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] + ')"><i class="fas fa-play left" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="playItem(\'' + artistData['views'][category]['data'][0]['id'] + '\', \'' + src + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="modernContextMenu(this)"></i></div>';
-                    latestFeatured.style.display = 'inline-block';
-                    break;
-                case 'latest-release':
-                    document.getElementById('top-songs').className = 'divided';
-                    var latestFeatured = document.getElementById('latest-featured');
-                    latestFeatured.setAttribute('parent', 'nodelete');
-                    latestFeatured.setAttribute('media_type', artistData['views'][category]['data'][0]['type']);
-                    latestFeatured.setAttribute('media_id', artistData['views'][category]['data'][0]['id']);
-
-                    document.getElementById('lf-title').innerHTML = 'Featured Release';
-                    if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
-                        var src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
-                    } else {
-                        var src = 'assets/noArtwork.png';
-                    }
-                    document.getElementById('lf-artwork').src = src;
-
-                    var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
-                    document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
-                    document.getElementById('lf-songtitle').innerHTML = artistData['views'][category]['data'][0]['attributes']['name'];
-                    if(artistData['views'][category]['data'][0]['attributes']['trackCount'] == 1) {
-                        document.getElementById('lf-counter').innerHTML = '1 Song'
-                    } else {
-                        document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
-                    }
-
-                    latestFeatured.innerHTML = latestFeatured.innerHTML + '<div id="lf-img-overlay" onclick="presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] + ')"><i class="fas fa-play left" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="playItem(\'' + artistData['views'][category]['data'][0]['id'] + '\', \'' + src + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="modernContextMenu(this)"></i></div>';
-                    latestFeatured.style.display = 'inline-block';
-                    break;
-                case 'top-songs':
-                    var topSongs = document.getElementById('top-songs');
-
-                    document.getElementById('song-results').style.display = 'block';
-
-                    var i = 0;
-                    Object.keys(artistData['views'][category]['data']).forEach(async function(song) {
-                        i++;
-                        if(i > 12) return;
-
-                        var songLi = document.createElement('li');
-                        songLi.setAttribute('parent', 'nodelete');
-                        songLi.setAttribute('media_type', 'songs');
-                        songLi.setAttribute('media_id', artistData['views'][category]['data'][song]['id']);
-                        var artworkImg = document.createElement('img');
-                        artworkImg.setAttribute('draggable', 'false');
-                        artworkImg.className = 'artwork';
-                        artworkImg.src = artistData['views'][category]['data'][song]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png').replace('{c}', '');
-                        artworkImg.setAttribute('onclick', 'playSong("' + artistData['views'][category]['data'][song]['id'] + '", "' + artistData['views'][category]['data'][song]['attributes']['name'] + '", "' + artworkImg.src + '", "' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '", "' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '", ' + Math.round(artistData['views'][category]['data'][song]['attributes']['durationInMillis']/1000) + ')');
-                        songLi.appendChild(artworkImg);
-
-                        var playImg = document.createElement('img');
-                        playImg.className = 'play';
-                        playImg.setAttribute('draggable', 'false');
-                        playImg.src = 'assets/play.svg';
-                        songLi.appendChild(playImg);
-
-                        var ellipsisI = document.createElement('i');
-                        ellipsisI.className = 'fas fa-ellipsis-h';
-                        ellipsisI.setAttribute('onclick', 'modernContextMenu(this)');
-                        songLi.appendChild(ellipsisI);
-
-                        var addImg = document.createElement('img');
-                        addImg.className = 'add';
-                        addImg.src = 'assets/add.svg';
-                        addImg.setAttribute('draggable', 'false');
-                        addImg.setAttribute('onclick', 'queueAddSong("' + artistData['views'][category]['data'][song]['id'] + '", this)');
-                        if(await isInLibrary(artistData['views'][category]['data'][song]['id'], 'songs')) addImg.style.display = 'none';
-                        songLi.appendChild(addImg);
-
-                        var titleText = document.createElement('h4');
-                        titleText.innerHTML = artistData['views'][category]['data'][song]['attributes']['name'];
-                        songLi.appendChild(titleText);
-
-                        var artistText = document.createElement('h5');
-                        artistText.innerHTML = artistData['views'][category]['data'][song]['attributes']['artistName'];
-                        artistText.setAttribute('onclick', 'presentArtist("' + id + '")');
-                        songLi.appendChild(artistText);
-
-                        document.getElementById('songs-container').appendChild(songLi);
-                    });
-                    topSongs.style.display = 'inline-block';
-                    break;
-            }
+        if(artistData['attributes']['editorialArtwork']['centeredFullscreenBackground'] !== undefined) {
+            var parralaxAvatar = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['url'];
+            var width = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['width'];
+            var height = artistData['attributes']['editorialArtwork']['centeredFullscreenBackground']['height'];
+            document.getElementById('artist-show-parralax').src = parralaxAvatar.replace('{w}', width).replace('{h}', height).replace('{f}', 'png');
+            document.getElementById('artist-show-parralax').style.display = 'block';
+            document.getElementById('artist-show-avatar').style.display = 'none';
+            document.getElementById('artist-content').className = 'content-heromode';
+            document.getElementById('artist-show-name').style.color = 'white';
+        } else if(artistData['attributes']['artwork'] !== undefined) {
+            document.getElementById('artist-show-avatar').src = artistData['attributes']['artwork']['url'].replace('{w}', '190').replace('{h}', '190').replace('{f}', 'png');
+            document.getElementById('artist-show-parralax').style.display = 'none';
+            document.getElementById('artist-show-avatar').style.display = 'block';
+            document.getElementById('artist-content').className = 'content-avatarmode';
+            document.getElementById('artist-show-name').removeAttribute('style');
+        } else { // no avatar
+            document.getElementById('artist-show-avatar').removeAttribute('src');
+            document.getElementById('artist-show-parralax').style.display = 'none';
+            document.getElementById('artist-show-avatar').style.display = 'block';
+            document.getElementById('artist-content').className = 'content-avatarmode';
+            document.getElementById('artist-show-name').removeAttribute('style');
         }
-    });
 
-    document.getElementById('artist-show-name').innerHTML = artistData['attributes']['name'];
-    document.getElementById('c-artist-loading-item').style.display = 'none';
+        Object.keys(artistData['meta']['views']['order']).forEach(function(category) {
+            category = artistData['meta']['views']['order'][category];
+            if(Object.keys(artistData['views'][category]['data']).length > 0) {
+                switch(category) {
+                    case 'featured-release':
+                        document.getElementById('top-songs').className = 'divided';
+                        var latestFeatured = document.getElementById('latest-featured');
+                        latestFeatured.setAttribute('parent', 'nodelete');
+                        latestFeatured.setAttribute('media_type', artistData['views'][category]['data'][0]['type']);
+                        latestFeatured.setAttribute('media_id', artistData['views'][category]['data'][0]['id']);
+
+                        document.getElementById('lf-title').innerHTML = 'Featured Release';
+                        if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
+                            var src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
+                        } else {
+                            var src = 'assets/noArtwork.png';
+                        }
+                        document.getElementById('lf-artwork').src = src;
+
+                        var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
+                        document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
+                        document.getElementById('lf-songtitle').innerHTML = artistData['views'][category]['data'][0]['attributes']['name'];
+                        if(artistData['views'][category]['data'][0]['attributes']['trackCount'] == 1) {
+                            document.getElementById('lf-counter').innerHTML = '1 Song'
+                        } else {
+                            document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
+                        }
+
+                        latestFeatured.innerHTML = latestFeatured.innerHTML + '<div id="lf-img-overlay" onclick="presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] + ')"><i class="fas fa-play left" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="playItem(\'' + artistData['views'][category]['data'][0]['id'] + '\', \'' + src + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="modernContextMenu(this)"></i></div>';
+                        latestFeatured.style.display = 'inline-block';
+                        break;
+                    case 'latest-release':
+                        document.getElementById('top-songs').className = 'divided';
+                        var latestFeatured = document.getElementById('latest-featured');
+                        latestFeatured.setAttribute('parent', 'nodelete');
+                        latestFeatured.setAttribute('media_type', artistData['views'][category]['data'][0]['type']);
+                        latestFeatured.setAttribute('media_id', artistData['views'][category]['data'][0]['id']);
+
+                        document.getElementById('lf-title').innerHTML = 'Featured Release';
+                        if(checkDictPathExists(artistData, ['views', category, 'data', 0, 'attributes', 'artwork', 'url'])) {
+                            var src = artistData['views'][category]['data'][0]['attributes']['artwork']['url'].replace('{w}', '180').replace('{h}', '180').replace('{f}', 'jpg');
+                        } else {
+                            var src = 'assets/noArtwork.png';
+                        }
+                        document.getElementById('lf-artwork').src = src;
+
+                        var date = new Date(artistData['views'][category]['data'][0]['attributes']['releaseDate']);
+                        document.getElementById('lf-releasedate').innerHTML = moment(date).format("DD MMMM YYYY");
+                        document.getElementById('lf-songtitle').innerHTML = artistData['views'][category]['data'][0]['attributes']['name'];
+                        if(artistData['views'][category]['data'][0]['attributes']['trackCount'] == 1) {
+                            document.getElementById('lf-counter').innerHTML = '1 Song'
+                        } else {
+                            document.getElementById('lf-counter').innerHTML = artistData['views'][category]['data'][0]['attributes']['trackCount'] + ' Songs';
+                        }
+
+                        latestFeatured.innerHTML = latestFeatured.innerHTML + '<div id="lf-img-overlay" onclick="presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] + ')"><i class="fas fa-play left" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="playItem(\'' + artistData['views'][category]['data'][0]['id'] + '\', \'' + src + '\', \'album\')"></i><i class="fas fa-ellipsis-h right" onmouseover="this.parentElement.removeAttribute(\'onclick\')" onmouseout="this.parentElement.setAttribute(\'onclick\', \'presentOnlineAlbum(' + artistData['views'][category]['data'][0]['id'] +  ')\')" onclick="modernContextMenu(this)"></i></div>';
+                        latestFeatured.style.display = 'inline-block';
+                        break;
+                    case 'top-songs':
+                        var topSongs = document.getElementById('top-songs');
+
+                        document.getElementById('song-results').style.display = 'block';
+
+                        var i = 0;
+                        Object.keys(artistData['views'][category]['data']).forEach(async function(song) {
+                            i++;
+                            if(i > 12) return;
+
+                            var songLi = document.createElement('li');
+                            songLi.setAttribute('parent', 'nodelete');
+                            songLi.setAttribute('media_type', 'songs');
+                            songLi.setAttribute('media_id', artistData['views'][category]['data'][song]['id']);
+                            var artworkImg = document.createElement('img');
+                            artworkImg.setAttribute('draggable', 'false');
+                            artworkImg.className = 'artwork';
+                            artworkImg.src = artistData['views'][category]['data'][song]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png').replace('{c}', '');
+                            artworkImg.setAttribute('onclick', 'playSong("' + artistData['views'][category]['data'][song]['id'] + '", "' + artistData['views'][category]['data'][song]['attributes']['name'] + '", "' + artworkImg.src + '", "' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '", "' + artistData['views'][category]['data'][song]['attributes']['artistName'] + '", ' + Math.round(artistData['views'][category]['data'][song]['attributes']['durationInMillis']/1000) + ')');
+                            songLi.appendChild(artworkImg);
+
+                            var playImg = document.createElement('img');
+                            playImg.className = 'play';
+                            playImg.setAttribute('draggable', 'false');
+                            playImg.src = 'assets/play.svg';
+                            songLi.appendChild(playImg);
+
+                            var ellipsisI = document.createElement('i');
+                            ellipsisI.className = 'fas fa-ellipsis-h';
+                            ellipsisI.setAttribute('onclick', 'modernContextMenu(this)');
+                            songLi.appendChild(ellipsisI);
+
+                            var addImg = document.createElement('img');
+                            addImg.className = 'add';
+                            addImg.src = 'assets/add.svg';
+                            addImg.setAttribute('draggable', 'false');
+                            addImg.setAttribute('onclick', 'queueAddSong("' + artistData['views'][category]['data'][song]['id'] + '", this)');
+                            if(await isInLibrary(artistData['views'][category]['data'][song]['id'], 'songs')) addImg.style.display = 'none';
+                            songLi.appendChild(addImg);
+
+                            var titleText = document.createElement('h4');
+                            titleText.innerHTML = artistData['views'][category]['data'][song]['attributes']['name'];
+                            songLi.appendChild(titleText);
+
+                            var artistText = document.createElement('h5');
+                            artistText.innerHTML = artistData['views'][category]['data'][song]['attributes']['artistName'];
+                            artistText.setAttribute('onclick', 'presentArtist("' + id + '")');
+                            songLi.appendChild(artistText);
+
+                            document.getElementById('songs-container').appendChild(songLi);
+                        });
+                        topSongs.style.display = 'inline-block';
+                        break;
+                    case 'featured-albums':
+                        var featuredAlbums = document.getElementById('featured-albums');                        
+
+                        Object.keys(artistData['views'][category]['data']).forEach(function(album) {
+                            var avatarWrapper = document.createElement('div');
+                            avatarWrapper.setAttribute('align', 'center');
+                            avatarWrapper.setAttribute('parent', 'nodelete');
+                            avatarWrapper.setAttribute('media_type', 'albums');
+                            avatarWrapper.setAttribute('media_id', artistData['views'][category]['data'][album]['id']);
+                            avatarWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + artistData['views'][category]['data'][album]['id'] + '\', \'' + artistData['views'][category]['data'][album]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', "album")"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
+
+                            var artworkImg = document.createElement('img');
+                            artworkImg.src = artistData['views'][category]['data'][album]['attributes']['artwork']['url'].replace('{w}', '250').replace('{h}', '250').replace('{f}', 'png');
+                            artworkImg.setAttribute('draggable', 'false');
+                            artworkImg.setAttribute('onclick', 'presentOnlineAlbum("' + artistData['views'][category]['data'][album]['id'] + '")');
+
+                            var nameSpan = document.createElement('span');
+                            nameSpan.innerHTML = artistData['views'][category]['data'][album]['attributes']['name'];
+                            nameSpan.className = 'link';
+                            nameSpan.setAttribute('onclick', 'presentOnlineAlbum("' + artistData['views'][category]['data'][album]['id'] + '")');
+
+                            var yearSpan = document.createElement('span');
+                            yearSpan.className = 'lighter';
+                            yearSpan.innerHTML = artistData['views'][category]['data'][album]['attributes']['releaseDate'].substr(0, 4);
+
+                            avatarWrapper.appendChild(artworkImg);
+                            avatarWrapper.appendChild(nameSpan);
+                            avatarWrapper.appendChild(yearSpan);
+
+                            document.getElementById('falbums-container').appendChild(avatarWrapper);
+                        });
+
+                        featuredAlbums.style.display = 'inline-block';
+                        break;
+                    case 'full-albums':
+                        var fullAlbums = document.getElementById('full-albums');                        
+
+                        Object.keys(artistData['views'][category]['data']).forEach(function(album) {
+                            var avatarWrapper = document.createElement('div');
+                            avatarWrapper.setAttribute('align', 'center');
+                            avatarWrapper.setAttribute('parent', 'nodelete');
+                            avatarWrapper.setAttribute('media_type', 'albums');
+                            avatarWrapper.setAttribute('media_id', artistData['views'][category]['data'][album]['id']);
+                            avatarWrapper.innerHTML = '<i class="fas fa-play left" onclick="playItem(\'' + artistData['views'][category]['data'][album]['id'] + '\', \'' + artistData['views'][category]['data'][album]['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50').replace('{f}', 'png') + '\', "album")"></i><i class="fas fa-ellipsis-h right" onclick="modernContextMenu(this)"></i>';
+
+                            var artworkImg = document.createElement('img');
+                            artworkImg.src = artistData['views'][category]['data'][album]['attributes']['artwork']['url'].replace('{w}', '250').replace('{h}', '250').replace('{f}', 'png');
+                            artworkImg.setAttribute('draggable', 'false');
+                            artworkImg.setAttribute('onclick', 'presentOnlineAlbum("' + artistData['views'][category]['data'][album]['id'] + '")');
+
+                            var nameSpan = document.createElement('span');
+                            nameSpan.innerHTML = artistData['views'][category]['data'][album]['attributes']['name'];
+                            nameSpan.className = 'link';
+                            nameSpan.setAttribute('onclick', 'presentOnlineAlbum("' + artistData['views'][category]['data'][album]['id'] + '")');
+
+                            var yearSpan = document.createElement('span');
+                            yearSpan.className = 'lighter';
+                            yearSpan.innerHTML = artistData['views'][category]['data'][album]['attributes']['releaseDate'].substr(0, 4);
+
+                            avatarWrapper.appendChild(artworkImg);
+                            avatarWrapper.appendChild(nameSpan);
+                            avatarWrapper.appendChild(yearSpan);
+
+                            document.getElementById('fullalbums-container').appendChild(avatarWrapper);
+                        });
+
+                        fullAlbums.style.display = 'inline-block';
+                        break;
+                }
+            }
+        });
+
+        document.getElementById('artist-show-name').innerHTML = artistData['attributes']['name'];
+        document.getElementById('c-artist-loading-item').style.display = 'none';
+    } catch (error) {
+        presentDialog("An error happened while loading artist data, please try again later.", "OK");
+        throw error;
+    }
 }
 
 async function presentSearchResult(text) {
@@ -1090,7 +1181,7 @@ async function modernContextMenu(element) {
     element.setAttribute('contexted', true);
 
     //special cases
-    if(element.id = 'player-info') {
+    if(parent.id == 'player-info') {
         contextMenu.style.zIndex = 999;
     } else {
         contextMenu.style.zIndex = 1;

@@ -60,7 +60,7 @@
             <img src="assets/loading.gif" />
             <h3>Music is loading, this might not take long.</h3>
         </div>
-        <div align="center">
+        <div align="center" class="sw-wrapper">
             <div id="search-window" style="display: none;">
                 <div class="search-type-wrapper">
                     <div id="search-type-online" class="selected">Apple Music</div>
@@ -285,6 +285,14 @@
                             <div id="songs-container"></div>
                         </div>
                     </div>
+                    <div id="featured-albums" align="left">
+                        <h4 class="title">Featured Albums</h4>
+                        <div id="falbums-container"></div>
+                    </div>
+                    <div id="full-albums" align="left">
+                        <h4 class="title">Albums</h4>
+                        <div id="fullalbums-container"></div>
+                    </div>
                     <div class="parralax-bottom-wrapper">
                         <img src="assets/play.svg" />
                         <h2 id="artist-show-name"></h2>
@@ -321,7 +329,7 @@
                 </div>
             </div>
             <div class="c-item" id="c-playlist">
-                <div id="playlist-header" parent>
+                <div id="playlist-header" parent="nodelete" media_type="library-playlists">
                     <img id="playlist-show-artwork" />
                     <div class="text-wrapper">
                         <h1 id="playlist-show-title"></h1>
@@ -329,7 +337,7 @@
                         <span id="playlist-show-description"></span>
                     </div>
                     <div class="play-button" id="playlist-show-play"><img src="assets/play.svg" /> Play</div><div class="shuffle-button" id="playlist-show-shuffle"><img src="assets/shuffle.svg" /> <span>Shuffle</span></div>
-                    <i class="fas fa-ellipsis-h"></i>
+                    <i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i>
                 </div>
                 <div class="example">
                     <span>Song</span>

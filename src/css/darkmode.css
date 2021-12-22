@@ -130,6 +130,7 @@ img[src="assets/loading.gif"] {
 #search-window {
     background-color: #383838e3;
     border: 1px solid #464646;
+    box-shadow: rgb(0 0 0 / 20%) 0px 7px 29px 0px;
 }
 
 #search-window #suggestion-list li img {
