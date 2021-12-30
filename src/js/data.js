@@ -850,43 +850,53 @@ function getAlbumData(id) {
 
 function getOnlineAlbumData(id) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/catalog/fr/albums/" + id + "?l=en-gb&platform=web&omit%5Bresource%5D=autos&include=tracks%2Cartists%2Crecord-labels&include%5Bsongs%5D=artists%2Ccomposers&include%5Bmusic-videos%5D=artists%2Ccomposers&extend=offers%2Cpopularity%2CeditorialVideo&views=appears-on%2Cmore-by-artist%2Crelated-videos%2Cother-versions%2Cyou-might-also-like%2Cvideo-extras%2Caudio-extras&fields%5Bartists%5D=name%2Curl&fields%5Balbums%3Aalbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&fields%5Brecord-labels%5D=name%2Curl&extend%5Balbums%5D=editorialArtwork&art%5Burl%5D=f";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/catalog/fr/albums/" + id + "?l=en-gb&platform=web&omit%5Bresource%5D=autos&include=tracks%2Cartists%2Crecord-labels&include%5Bsongs%5D=artists%2Ccomposers&include%5Bmusic-videos%5D=artists%2Ccomposers&extend=offers%2Cpopularity%2CeditorialVideo&views=appears-on%2Cmore-by-artist%2Crelated-videos%2Cother-versions%2Cyou-might-also-like%2Cvideo-extras%2Caudio-extras&fields%5Bartists%5D=name%2Curl&fields%5Balbums%3Aalbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&fields%5Brecord-labels%5D=name%2Curl&extend%5Balbums%5D=editorialArtwork&art%5Burl%5D=f";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data'][0]);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data'][0]);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
 function getArtistData(id) { //online id
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/catalog/fr/artists/" + id + "?l=en-gb&platform=web&omit%5Bresource%5D=autos&views=featured-release%2Cfull-albums%2Cappears-on-albums%2Cfeatured-albums%2Cfeatured-on-albums%2Csingles%2Ccompilation-albums%2Clive-albums%2Clatest-release%2Ctop-music-videos%2Csimilar-artists%2Ctop-songs%2Cplaylists%2Cmore-to-hear%2Cmore-to-see&extend=artistBio%2CbornOrFormed%2CeditorialArtwork%2CeditorialVideo%2CisGroup%2Corigin%2Chero&extend%5Bplaylists%5D=trackCount&omit%5Bresource%3Asongs%5D=relationships&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl%2CtrackCount&limit[artists%3Atop-songs]=20&art%5Burl%5D=f";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/catalog/fr/artists/" + id + "?l=en-gb&platform=web&omit%5Bresource%5D=autos&views=featured-release%2Cfull-albums%2Cappears-on-albums%2Cfeatured-albums%2Cfeatured-on-albums%2Csingles%2Ccompilation-albums%2Clive-albums%2Clatest-release%2Ctop-music-videos%2Csimilar-artists%2Ctop-songs%2Cplaylists%2Cmore-to-hear%2Cmore-to-see&extend=artistBio%2CbornOrFormed%2CeditorialArtwork%2CeditorialVideo%2CisGroup%2Corigin%2Chero&extend%5Bplaylists%5D=trackCount&omit%5Bresource%3Asongs%5D=relationships&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl%2CtrackCount&limit[artists%3Atop-songs]=20&art%5Burl%5D=f";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['data'][0]);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['data'][0]);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
@@ -948,43 +958,53 @@ function handleCMRemoveFromLibrary() {
 
 function getInfoForSearch(text) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/catalog/fr/search/suggestions?term=" + text + "&l=en-gb&platform=web&types=albums%2Cartists%2Csongs%2Cplaylists%2Cmusic-videos%2Cactivities%2Ctv-episodes%2Ceditorial-items%2Cstations%2Crecord-labels&kinds=terms%2CtopResults&omit[resource]=autos&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&limit[results%3Aterms]=5&limit[results%3AtopResults]=10";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/catalog/fr/search/suggestions?term=" + text + "&l=en-gb&platform=web&types=albums%2Cartists%2Csongs%2Cplaylists%2Cmusic-videos%2Cactivities%2Ctv-episodes%2Ceditorial-items%2Cstations%2Crecord-labels&kinds=terms%2CtopResults&omit[resource]=autos&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&limit[results%3Aterms]=5&limit[results%3AtopResults]=10";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['results']);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['results']);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
 function getSearchData(text) {
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/catalog/fr/search?term=" + text + "&l=en-gb&platform=web&types=activities%2Calbums%2Capple-curators%2Cartists%2Ccurators%2Ceditorial-items%2Cmusic-movies%2Cmusic-videos%2Cplaylists%2Csongs%2Cstations%2Ctv-episodes%2Cuploaded-videos%2Crecord-labels&limit=25&relate%5Beditorial-items%5D=contents&include[editorial-items]=contents&include[albums]=artists&include[songs]=artists&include[music-videos]=artists&extend=artistUrl&fields[artists]=url%2Cname%2Cartwork&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&with=serverBubbles%2ClyricHighlights&art%5Burl%5D=f&omit%5Bresource%5D=autos";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+            var url = "https://amp-api.music.apple.com/v1/catalog/fr/search?term=" + text + "&l=en-gb&platform=web&types=activities%2Calbums%2Capple-curators%2Cartists%2Ccurators%2Ceditorial-items%2Cmusic-movies%2Cmusic-videos%2Cplaylists%2Csongs%2Cstations%2Ctv-episodes%2Cuploaded-videos%2Crecord-labels&limit=25&relate%5Beditorial-items%5D=contents&include[editorial-items]=contents&include[albums]=artists&include[songs]=artists&include[music-videos]=artists&extend=artistUrl&fields[artists]=url%2Cname%2Cartwork&fields%5Balbums%5D=artistName%2CartistUrl%2Cartwork%2CcontentRating%2CeditorialArtwork%2Cname%2CplayParams%2CreleaseDate%2Curl&with=serverBubbles%2ClyricHighlights&art%5Burl%5D=f&omit%5Bresource%5D=autos";
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(JSON.parse(xhr.responseText)['results']);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(JSON.parse(xhr.responseText)['results']);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
@@ -1061,43 +1081,53 @@ function addItemToLibrary(id, item) { // online id: 411564564
 
 function deleteItemFromLibrary(id, item) { //offline id: i.uhgGhyGFy
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/" + item + "/" + id;
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("DELETE", url);
+            var url = "https://amp-api.music.apple.com/v1/me/library/" + item + "/" + id;
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("DELETE", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(xhr.status);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(xhr.status);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
 function removeItemFromLibrary(id, type) { //offline id: i.uhgGhyGFy
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/me/library/" + type + "/" + id;
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("DELETE", url);
+            var url = "https://amp-api.music.apple.com/v1/me/library/" + type + "/" + id;
 
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI2OTg0ODk4LCJleHAiOjE2NDI1MzY4OTh9.Ftw-IRCBuL9EWw7N8yqsnvsmZc5DI_aqG7ic0eZXOfZMAB7lrVij7HGihIo6Jf9C3ZHw5RfZsd2ZDdYn_ncD9A");
-        xhr.setRequestHeader("media-user-token", "AmifiDxfj6jga9ItOxFDhtOaliLx6VaMWVnEErN57yBio3mNZSH7aXl2cLb4YqhHYVtizblTkvDBX07LUSbRLhX2p+SbM1acD25vQY8SRtPL5uhYnRUXnzTsiEzwtLj3ep2ydgsBnfl3CzbdXVHs774wZ5JwGAT7HWQcBRgXdL0tRyEzclos8LiO93xS1tPhhola2+RqnrQOmrkkYf2jDizGvIyeJB2TavxjCoDJRfkGRAcgNg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            var xhr = new XMLHttpRequest();
+            xhr.open("DELETE", url);
 
-        xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            resolve(xhr.status);
-        }};
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
 
-        xhr.send();
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                resolve(xhr.status);
+            }};
+
+            xhr.send();
+        });
     });
 }
 
@@ -1144,22 +1174,27 @@ function isInLibrary(id, type) { //online id
 
 function getAlbumIdForOnlineSong(id) { //online id
     return new Promise(resolve => {
-        var url = "https://amp-api.music.apple.com/v1/catalog/fr/?ids%5Bsongs%5D=" + id + "&l=en-gb&platform=web";
+        var getCreds = keytar.findCredentials('AppleMusic');
+        getCreds.then((creds) => {
+            var credsDict = formatCredsDict(creds);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        
-        xhr.setRequestHeader("authorization", "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNjI0NjQwODcyLCJleHAiOjE2NDAxOTI4NzJ9.yT3syIsyvTJDVG-3tFfZU0BDC-3uw-mGhHvBzhfNW1Qyyq2z5YHVVpbBfWTyVHHXznIM3efAAwvnD5L365exUw");
-        xhr.setRequestHeader("media-user-token", "As4DmOfm1sM8WjKAD2g4JqSBcJeSoTGl+WlAThicP3M7DVWg7RxaM1t6GrDbpiyeSl2/R75H+ENi7C5l+jtDeXV9+KcBHiTZuRzDYrvMlPIwIkZzbrf7T7aVvYR6OBWKHvzlRSl5cD2WfPJkPDIPNrppd4ASdU0jwJNA/1F1aF9VZjHEYa/z34WHu6QAjwwp26jNoWoZJC8r4n0NPJm0awjjioBGYd+DcPEJ1d7N8FJFWm43Rg==");
-        xhr.setRequestHeader("accept", "*/*");
-        xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
-        
-        xhr.onreadystatechange = function () {
-           if (xhr.readyState === 4) {
-                resolve(JSON.parse(xhr.responseText)['data'][0]['relationships']['albums']['data'][0]['id']);
-           }};
-        
-        xhr.send();        
+            var url = "https://amp-api.music.apple.com/v1/catalog/fr/?ids%5Bsongs%5D=" + id + "&l=en-gb&platform=web";
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
+            
+            xhr.setRequestHeader("authorization", credsDict['Authorization']);
+            xhr.setRequestHeader("media-user-token", credsDict['MUT']);
+            xhr.setRequestHeader("accept", "*/*");
+            xhr.setRequestHeader("accept-language", "en-US,en;q=0.9,fr;q=0.8,fr-FR;q=0.7,en-GB;q=0.6");
+            
+            xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                    resolve(JSON.parse(xhr.responseText)['data'][0]['relationships']['albums']['data'][0]['id']);
+            }};
+            
+            xhr.send();        
+        });
     });
 }
 
