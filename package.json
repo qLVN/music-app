@@ -7,7 +7,7 @@
     "discord-rich-presence": "0.0.8",
     "discord-rpc": "^4.0.1",
     "discord.js": "^12.5.3",
-    "electron-acrylic-window": "^0.5.8",
+    "electron-acrylic-window": "^0.5.11",
     "keytar": "^7.7.0"
   },
   "devDependencies": {
