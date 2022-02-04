@@ -2614,6 +2614,7 @@ body.is-focused .content-wrapper #c-album #album-song-list li .playing .playback
     position: relative;
     display: inline-block;
     margin-right: 30px;
+    width: 250px;
 }
 
 .content-wrapper #c-artist #artist-content #featured-albums #falbums-container div img {

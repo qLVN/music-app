@@ -236,6 +236,10 @@ function invisibleWindow() {
     win2.show();
   });
 
+  ipcMain.on('present_applemusic_login', (event) => {
+    win2.webContents.executeJavaScript('document.querySelector("a[href=\"/login\"]").click();');
+  });
+
   ipcMain.on('hide_applemusic', (event) => {
     win2.hide();
   });
