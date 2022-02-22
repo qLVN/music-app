@@ -205,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $(window).click(function() {
         document.getElementById('context-menu').style.pointerEvents = 'none';
         document.getElementById('context-menu').style.opacity = 0;
+        document.getElementById('context-menu').style.zIndex = 11;
     });
 
     function onBlur() {
@@ -1113,6 +1114,7 @@ async function modernContextMenu(element) {
     var removeFromLibrary = document.getElementById('context-menu-removelibrary');
     var contextMedia = document.getElementById('context-menu-media');
     var removeFromPlaylist = document.getElementById('context-menu-removeplaylist');
+    var removeFromQueue = document.getElementById('context-menu-removequeue');
 
     var playNext = document.getElementById('context-menu-playnext');
     var playLater = document.getElementById('context-menu-playlater');
@@ -1133,6 +1135,14 @@ async function modernContextMenu(element) {
 
     if(parent !== null) {
         if(parent.getAttribute('media_type') != 'artists' && parent.getAttribute('media_type') != 'apple-curators' && parent.getAttribute('media_type') != 'stations') {
+
+            removeFromQueue.style.display = 'none';
+            switch(parent.getAttribute('media_type')) {
+                case 'queue-song':
+                    removeFromQueue.style.display = 'block';
+                    break;
+            }
+
             if(parent.getAttribute('media_id').includes('.')) { //offline
                 addToLibrary.style.display = 'none';
                 removeFromLibrary.style.display = 'block';
@@ -1160,7 +1170,6 @@ async function modernContextMenu(element) {
                 playNext.setAttribute('onclick', 'playNextOrLater("Next", "' + parent.getAttribute('media_type').slice(0, -1) + '", "' + parent.getAttribute('media_id') + '")');
                 playLater.setAttribute('onclick', 'playNextOrLater("Later", "' + parent.getAttribute('media_type').slice(0, -1) + '", "' + parent.getAttribute('media_id') + '")');
             }
-
         } else {
             addToLibrary.style.display = 'none';
             removeFromLibrary.style.display = 'none';

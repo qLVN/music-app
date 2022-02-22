@@ -956,6 +956,28 @@ function handleCMRemoveFromLibrary() {
     else console.log('No data was found for the opened context menu.');
 }
 
+function handleCMRemoveFromQueue() {
+    var parent = null;
+
+    //nasty af
+    var element = document.querySelector('[contexted]');
+    if(element.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode;
+    } else if(element.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode;
+    } else if(element.parentNode.parentNode.parentNode.getAttribute('parent') !== null) {
+        parent = element.parentNode.parentNode.parentNode;
+    }
+
+    if(parent !== null) {
+        if(parent.getAttribute('media_type') == 'queue-song') {
+            ipcRenderer.send('MusicJS', 'MusicKit.getInstance().queue.remove({ song: "' + parent.getAttribute('media_id') + '" });');
+        }
+        else console.log('Unauthorized handleCMRemoveFromQueue');
+    }
+    else console.log('No data was found for the opened context menu.');
+}
+
 function getInfoForSearch(text) {
     return new Promise(resolve => {
         var getCreds = keytar.findCredentials('AppleMusic');

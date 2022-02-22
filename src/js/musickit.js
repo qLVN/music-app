@@ -281,6 +281,9 @@ function setQueueItems(items) {
         }
         songLi.className = 'queue-song-line';
         songLi.setAttribute('itemQueueIndex', i - 1);
+        songLi.setAttribute('parent', '');
+        songLi.setAttribute('media_type', 'queue-' + items[song]['item']['type']);
+        songLi.setAttribute('media_id', items[song]['item']['id']);
         songLi.setAttribute('onclick', 'selectSongInQueue(this)');
         songLi.setAttribute('ondblclick', 'ipcRenderer.send("MusicJS", "MusicKit.getInstance().changeToMediaAtIndex(' + (i - 1) + ');");');
 
@@ -289,7 +292,7 @@ function setQueueItems(items) {
         if(sec < 10) {
             sec = '0' + sec;
         }
-        songLi.innerHTML = '<img src="' + items[song]['item']['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '" /><span class="title">' + items[song]['item']['attributes']['name'] + '</span><span class="artist">' + items[song]['item']['attributes']['artistName'] + '</span><span class="time">' + min + ':' + sec + '</span><i class="fas fa-ellipsis-h"></i';
+        songLi.innerHTML = '<img src="' + items[song]['item']['attributes']['artwork']['url'].replace('{w}', '50').replace('{h}', '50') + '" /><span class="title">' + items[song]['item']['attributes']['name'] + '</span><span class="artist">' + items[song]['item']['attributes']['artistName'] + '</span><span class="time">' + min + ':' + sec + '</span><i class="fas fa-ellipsis-h" onclick="modernContextMenu(this)"></i';
         document.getElementById('queue-song-list').appendChild(songLi);
     });
 
