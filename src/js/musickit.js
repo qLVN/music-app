@@ -381,7 +381,7 @@ function playNextOrLater(nextLater, type, id) { //nextLater is 'Next' || 'Later'
     });
 }
 
-function toggleShuffle(button, customValue) {
+function toggleShuffle(customValue) {
     if(customValue !== undefined) {
         var button = document.getElementById('shuffle-button');
         switch(customValue) {

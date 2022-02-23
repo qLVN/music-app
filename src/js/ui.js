@@ -458,7 +458,7 @@ function toggleQueue() {
 
 async function presentAlbum(id) {
     try {
-        document.getElementById('c-album').removeAttribute('item_id');
+        document.getElementById('c-album').removeAttribute('media_id');
         document.getElementById('album-show-complete-album').className = 'hidden';
         document.getElementById('album-show-complete-album').removeAttribute('onclick');
         document.getElementById('album-song-list').innerHTML = '';
@@ -470,7 +470,7 @@ async function presentAlbum(id) {
         document.getElementById('album-show-decription-more').style.display = 'none';
 
         var albumData = await getAlbumData(id);
-        document.getElementById('c-album').setAttribute('item_id', albumData['relationships']['catalog']['data'][0]['id']);
+        document.getElementById('c-album').setAttribute('media_id', albumData['relationships']['catalog']['data'][0]['id']);
         document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270');
         document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
         document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
@@ -529,7 +529,7 @@ async function presentAlbum(id) {
 
 async function presentOnlineAlbum(id) {
     try {
-        document.getElementById('c-album').removeAttribute('item_id');
+        document.getElementById('c-album').removeAttribute('media_id');
         document.getElementById('album-song-list').innerHTML = '';
         document.getElementById('album-show-complete-album').className = 'hidden';
         document.getElementById('album-show-complete-album').removeAttribute('onclick');
@@ -541,7 +541,7 @@ async function presentOnlineAlbum(id) {
         document.getElementById('album-show-decription-more').style.display = 'none';
 
         var albumData = await getOnlineAlbumData(id);
-        document.getElementById('c-album').setAttribute('item_id', albumData['id']);
+        document.getElementById('c-album').setAttribute('media_id', albumData['id']);
         document.getElementById('album-show-artwork').src = albumData['attributes']['artwork']['url'].replace('{w}', '270').replace('{h}', '270').replace('{f}', 'png');
         document.getElementById('album-show-title').innerHTML = albumData['attributes']['name'];
         document.getElementById('album-show-artist').innerHTML = albumData['attributes']['artistName'];
