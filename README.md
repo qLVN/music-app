@@ -11,6 +11,7 @@ This project is now quite old but should work approximatelly right, if configure
 - Full sync with the account
 - Listen Now & Browse Apple Music pages
 - Dark Mode
+- Discord Presence
 - Apple Music search and *not* Library search
 
 ### Apple Music API
